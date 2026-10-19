@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { Search, Star, MapPin, Sparkles, Heart } from "lucide-react";
-import "./HomeView.css"; // Import the CSS file for HomeView
+import "./HomeView.css";
 
-export default function HomeView({ favorites, toggleFavorite }) {
+export default function HomeView({
+  favorites,
+  toggleFavorite,
+  onSelectRestaurant,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
@@ -16,6 +20,9 @@ export default function HomeView({ favorites, toggleFavorite }) {
       distance: "1.2 km",
       imageColor: "#B8543A",
       promo: "10% off on Pancit Batil Patong",
+      address: "Centro 1, Delfin Albano, Isabela",
+      open_time: "08:00",
+      close_time: "21:00",
     },
     {
       id: 2,
@@ -26,6 +33,9 @@ export default function HomeView({ favorites, toggleFavorite }) {
       distance: "2.5 km",
       imageColor: "#D97706",
       promo: "Buy 1 Take 1 Cold Brew",
+      address: "Magsaysay, Delfin Albano, Isabela",
+      open_time: "09:00",
+      close_time: "22:00",
     },
     {
       id: 3,
@@ -36,6 +46,9 @@ export default function HomeView({ favorites, toggleFavorite }) {
       distance: "3.1 km",
       imageColor: "#78645E",
       promo: "Free iced tea for students",
+      address: "Rizal St, Delfin Albano, Isabela",
+      open_time: "10:00",
+      close_time: "23:00",
     },
   ];
 
@@ -118,7 +131,12 @@ export default function HomeView({ favorites, toggleFavorite }) {
           filteredRestaurants.map((spot) => {
             const isFavorited = favorites.some((fav) => fav.id === spot.id);
             return (
-              <div key={spot.id} className="restaurant-card">
+              <div
+                key={spot.id}
+                className="restaurant-card"
+                onClick={() => onSelectRestaurant(spot)} // <--- Triggers Detail View on click
+                style={{ cursor: "pointer" }}
+              >
                 <div
                   className="card-img-placeholder"
                   style={{ backgroundColor: spot.imageColor }}
@@ -126,10 +144,12 @@ export default function HomeView({ favorites, toggleFavorite }) {
                   <span className="promo-badge">
                     <Sparkles size={12} /> {spot.promo}
                   </span>
-                  {/* Favorite Toggle Button */}
                   <button
                     className={`fav-toggle-btn ${isFavorited ? "active" : ""}`}
-                    onClick={() => toggleFavorite(spot)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevents card click when toggling favorite
+                      toggleFavorite(spot);
+                    }}
                     aria-label="Toggle favorite"
                   >
                     <Heart

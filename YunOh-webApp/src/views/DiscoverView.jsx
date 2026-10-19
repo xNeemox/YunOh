@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Search, Star, MapPin, Sparkles, Database } from "lucide-react";
+import { Search, Star, MapPin, Sparkles, Database, Heart } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./DiscoverView.css";
 
-export default function DiscoverView({ favorites, toggleFavorite }) {
+export default function DiscoverView({
+  favorites,
+  toggleFavorite,
+  onSelectRestaurant,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch live restaurant data from Supabase on component mount
   useEffect(() => {
     async function fetchRestaurants() {
       try {
@@ -29,7 +32,6 @@ export default function DiscoverView({ favorites, toggleFavorite }) {
     fetchRestaurants();
   }, []);
 
-  // Filter logic based on user search input
   const filteredRestaurants = restaurants.filter(
     (item) =>
       item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,7 +94,6 @@ export default function DiscoverView({ favorites, toggleFavorite }) {
           </p>
         ) : (
           filteredRestaurants.map((spot) => {
-            // Map database schema fields flexibly (handles common column naming conventions)
             const spotId = spot.id || spot.restaurant_id;
             const spotName = spot.name || spot.restaurant_name;
             const spotCategory = spot.category || "Local Dining";
@@ -102,6 +103,9 @@ export default function DiscoverView({ favorites, toggleFavorite }) {
             const spotPromo =
               spot.promo || spot.description || "Special local discount";
             const spotColor = spot.imageColor || spot.color || "#B8543A";
+            const spotAddress = spot.address || "Delfin Albano, Isabela";
+            const spotOpenTime = spot.open_time || "08:00";
+            const spotCloseTime = spot.close_time || "21:00";
 
             const formattedSpot = {
               id: spotId,
@@ -112,12 +116,20 @@ export default function DiscoverView({ favorites, toggleFavorite }) {
               distance: spotDistance,
               promo: spotPromo,
               imageColor: spotColor,
+              address: spotAddress,
+              open_time: spotOpenTime,
+              close_time: spotCloseTime,
             };
 
             const isFavorited = favorites.some((fav) => fav.id === spotId);
 
             return (
-              <div key={spotId} className="restaurant-card">
+              <div
+                key={spotId}
+                className="restaurant-card"
+                onClick={() => onSelectRestaurant(formattedSpot)} // <--- Triggers Detail View on click
+                style={{ cursor: "pointer" }}
+              >
                 <div
                   className="card-img-placeholder"
                   style={{ backgroundColor: spotColor }}
@@ -127,7 +139,10 @@ export default function DiscoverView({ favorites, toggleFavorite }) {
                   </span>
                   <button
                     className={`fav-toggle-btn ${isFavorited ? "active" : ""}`}
-                    onClick={() => toggleFavorite(formattedSpot)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevents card click when toggling favorite
+                      toggleFavorite(formattedSpot);
+                    }}
                     aria-label="Toggle favorite"
                   >
                     <Heart
