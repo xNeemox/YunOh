@@ -1,5 +1,6 @@
 import React from "react";
 import { Home, Compass, Heart, User } from "lucide-react";
+import "./BottomNav.css"; // Import the CSS file for styling
 
 export default function BottomNav({ activeTab, setActiveTab }) {
   return (

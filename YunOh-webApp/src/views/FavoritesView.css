@@ -1,28 +1,6 @@
-/* --- Favorite Button on Cards --- */
-.fav-toggle-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: rgba(0, 0, 0, 0.4);
-  border: none;
-  cursor: pointer;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+/* --- Favorites View Styles --- */
+.favorites-view {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  transition:
-    transform 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.fav-toggle-btn:hover {
-  transform: scale(1.1);
-  background-color: rgba(0, 0, 0, 0.6);
-}
-
-.fav-toggle-btn.active {
-  background-color: var(--card-bg);
+  flex-direction: column;
+  gap: 16px;
 }

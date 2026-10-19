@@ -153,3 +153,158 @@
   justify-content: center;
   box-shadow: 0 4px 10px rgba(184, 84, 58, 0.3);
 }
+/* --- Profile & Auth View Styles --- */
+.profile-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-container {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.auth-tabs {
+  display: flex;
+  background-color: var(--bg-primary);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 16px;
+}
+
+.auth-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.auth-tab.active {
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.input-field-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  padding: 10px 12px;
+  border-radius: 10px;
+  gap: 10px;
+}
+
+.auth-input {
+  border: none;
+  background: none;
+  outline: none;
+  width: 100%;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.auth-submit-btn {
+  background-color: var(--struct-secondary);
+  color: #ffffff;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    opacity 0.2s ease,
+    transform 0.1s ease;
+  margin-top: 6px;
+}
+
+.auth-submit-btn:hover {
+  opacity: 0.9;
+}
+
+.auth-submit-btn:active {
+  transform: scale(0.98);
+}
+
+.logout-btn {
+  background-color: #dc2626;
+  width: 100%;
+}
+
+.auth-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  margin-bottom: 14px;
+}
+
+.auth-alert.error {
+  background-color: rgba(220, 38, 38, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.auth-alert.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.profile-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--struct-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(184, 84, 58, 0.3);
+}

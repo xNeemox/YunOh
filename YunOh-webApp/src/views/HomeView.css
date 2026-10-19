@@ -1,4 +1,4 @@
-/* --- Home View & Feed Styles --- */
+/* --- Home View Styles --- */
 .home-view {
   display: flex;
   flex-direction: column;
@@ -11,7 +11,6 @@
   color: var(--text-primary);
 }
 
-/* Search Bar */
 .search-bar-container {
   display: flex;
   align-items: center;
@@ -35,13 +34,12 @@
   color: var(--text-secondary);
 }
 
-/* Category Filter Chips */
 .category-scroll {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
-  scrollbar-width: none; /* Hide scrollbar for clean mobile look */
+  scrollbar-width: none;
 }
 
 .category-scroll::-webkit-scrollbar {
@@ -62,12 +60,11 @@
 }
 
 .category-chip.active {
-  background-color: var(--struct-secondary); /* 30% Terracotta */
+  background-color: var(--struct-secondary);
   color: #ffffff;
   border-color: var(--struct-secondary);
 }
 
-/* Restaurant Card */
 .restaurant-list {
   display: flex;
   flex-direction: column;
@@ -81,6 +78,7 @@
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   transition: transform 0.2s ease;
+  position: relative;
 }
 
 .restaurant-card:hover {
@@ -155,4 +153,32 @@
   display: flex;
   align-items: center;
   gap: 2px;
+}
+
+.fav-toggle-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border: none;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.fav-toggle-btn:hover {
+  transform: scale(1.1);
+  background-color: rgba(0, 0, 0, 0.6);
+}
+
+.fav-toggle-btn.active {
+  background-color: var(--card-bg);
 }

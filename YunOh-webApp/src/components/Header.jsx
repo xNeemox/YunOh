@@ -1,5 +1,6 @@
 import React from "react";
 import { Sun, Moon } from "lucide-react";
+import "./Header.css"; // Import the CSS file for styling
 
 export default function Header({ isDarkMode, toggleTheme }) {
   return (

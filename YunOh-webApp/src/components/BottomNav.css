@@ -1,0 +1,32 @@
+/* --- Bottom Navigation Component Styles --- */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 12px 0;
+  background-color: var(--card-bg);
+  border-top: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-weight: 500;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.nav-item.active {
+  color: var(--struct-secondary);
+}
+
+.nav-item:hover {
+  color: var(--accent-color);
+}
