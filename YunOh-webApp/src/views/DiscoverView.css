@@ -1,0 +1,27 @@
+/* --- Discover View Styles --- */
+.discover-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.discover-loading,
+.discover-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.supabase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(217, 119, 6, 0.1);
+  color: var(--accent-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
