@@ -6,6 +6,7 @@ export default function HomeView({
   favorites,
   toggleFavorite,
   onSelectRestaurant,
+  onSelectBusinessProfile,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -23,6 +24,10 @@ export default function HomeView({
       address: "Centro 1, Delfin Albano, Isabela",
       open_time: "08:00",
       close_time: "21:00",
+      logo_url: "",
+      cover_image_url: "",
+      menu_images: [],
+      gallery_images: [],
     },
     {
       id: 2,
@@ -36,6 +41,10 @@ export default function HomeView({
       address: "Magsaysay, Delfin Albano, Isabela",
       open_time: "09:00",
       close_time: "22:00",
+      logo_url: "",
+      cover_image_url: "",
+      menu_images: [],
+      gallery_images: [],
     },
     {
       id: 3,
@@ -49,6 +58,10 @@ export default function HomeView({
       address: "Rizal St, Delfin Albano, Isabela",
       open_time: "10:00",
       close_time: "23:00",
+      logo_url: "",
+      cover_image_url: "",
+      menu_images: [],
+      gallery_images: [],
     },
   ];
 
@@ -134,7 +147,7 @@ export default function HomeView({
               <div
                 key={spot.id}
                 className="restaurant-card"
-                onClick={() => onSelectRestaurant(spot)} // <--- Triggers Detail View on click
+                onClick={() => onSelectRestaurant(spot)} // Triggers Detail View on card click
                 style={{ cursor: "pointer" }}
               >
                 <div
@@ -147,7 +160,7 @@ export default function HomeView({
                   <button
                     className={`fav-toggle-btn ${isFavorited ? "active" : ""}`}
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevents card click when toggling favorite
+                      e.stopPropagation();
                       toggleFavorite(spot);
                     }}
                     aria-label="Toggle favorite"
@@ -163,9 +176,66 @@ export default function HomeView({
                 </div>
 
                 <div className="card-body">
-                  <div className="card-header-row">
-                    <h4 className="spot-name">{spot.name}</h4>
-                    <span className="spot-rating">
+                  <div
+                    className="card-header-row"
+                    style={{ alignItems: "center" }}
+                  >
+                    {/* Circular Merchant Profile Avatar before name */}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevents opening the DetailView
+                        onSelectBusinessProfile(spot); // Opens Business Profile View
+                      }}
+                      title="View Business Profile"
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        backgroundColor:
+                          spot.imageColor || "var(--struct-secondary)",
+                        overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        cursor: "pointer",
+                        border: "2px solid var(--accent-color)",
+                        boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                      }}
+                    >
+                      {spot.logo_url ? (
+                        <img
+                          src={spot.logo_url}
+                          alt={spot.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <span
+                          style={{
+                            color: "#fff",
+                            fontSize: "0.85rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {spot.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, marginLeft: "10px" }}>
+                      <h4 className="spot-name" style={{ margin: 0 }}>
+                        {spot.name}
+                      </h4>
+                    </div>
+
+                    <span
+                      className="spot-rating"
+                      style={{ whiteSpace: "nowrap" }}
+                    >
                       <Star
                         size={14}
                         fill="var(--accent-color)"
@@ -175,7 +245,7 @@ export default function HomeView({
                     </span>
                   </div>
 
-                  <div className="spot-meta">
+                  <div className="spot-meta" style={{ marginTop: "8px" }}>
                     <span className="category-tag">{spot.category}</span>
                     <span className="spot-distance">
                       <MapPin size={13} /> {spot.distance}

@@ -5,7 +5,8 @@ import HomeView from "./views/HomeView";
 import DiscoverView from "./views/DiscoverView";
 import FavoritesView from "./views/FavoritesView";
 import ProfileView from "./views/ProfileView";
-import DetailView from "./views/DetailView"; // <--- ADDED: Import DetailView component
+import DetailView from "./views/DetailView";
+import BusinessProfileView from "./views/BusinessProfileView"; // <--- NEW: Import BusinessProfileView
 import { supabase } from "./supabaseClient";
 import "./App.css";
 
@@ -14,8 +15,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [session, setSession] = useState(null);
 
-  // <--- ADDED: State to manage the currently selected restaurant for the detail view
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+
+  // <--- NEW: State to manage when a user is viewing a business storefront profile
+  const [selectedBusinessProfile, setSelectedBusinessProfile] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -55,10 +58,10 @@ export default function App() {
     });
   };
 
-  // <--- ADDED: Helper to reset the detail view when switching tabs via bottom navigation
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSelectedRestaurant(null);
+    setSelectedBusinessProfile(null); // <--- NEW: Reset business profile on tab switch
   };
 
   return (
@@ -67,28 +70,44 @@ export default function App() {
         <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
         <main className="app-content">
-          {/* <--- ADDED: If a restaurant is selected, show DetailView. Otherwise, show the active tab feed */}
-          {selectedRestaurant ? (
+          {/* <--- NEW: Priority 1: If a business profile is open, show BusinessProfileView */}
+          {selectedBusinessProfile ? (
+            <BusinessProfileView
+              business={selectedBusinessProfile}
+              onBack={() => setSelectedBusinessProfile(null)}
+            />
+          ) : selectedRestaurant ? (
+            /* Priority 2: If a restaurant detail is open, show DetailView */
             <DetailView
               restaurant={selectedRestaurant}
               onBack={() => setSelectedRestaurant(null)}
               favorites={favorites}
               toggleFavorite={toggleFavorite}
+              onSelectBusinessProfile={(spot) =>
+                setSelectedBusinessProfile(spot)
+              }
             />
           ) : (
+            /* Priority 3: Otherwise, show the active tab feed */
             <>
               {activeTab === "home" && (
                 <HomeView
                   favorites={favorites}
                   toggleFavorite={toggleFavorite}
-                  onSelectRestaurant={(spot) => setSelectedRestaurant(spot)} // <--- ADDED Prop
+                  onSelectRestaurant={(spot) => setSelectedRestaurant(spot)}
+                  onSelectBusinessProfile={(spot) =>
+                    setSelectedBusinessProfile(spot)
+                  } // <--- NEW Prop
                 />
               )}
               {activeTab === "discover" && (
                 <DiscoverView
                   favorites={favorites}
                   toggleFavorite={toggleFavorite}
-                  onSelectRestaurant={(spot) => setSelectedRestaurant(spot)} // <--- ADDED Prop
+                  onSelectRestaurant={(spot) => setSelectedRestaurant(spot)}
+                  onSelectBusinessProfile={(spot) =>
+                    setSelectedBusinessProfile(spot)
+                  } // <--- NEW Prop
                 />
               )}
               {activeTab === "favorites" && (
@@ -96,7 +115,10 @@ export default function App() {
                   favorites={favorites}
                   toggleFavorite={toggleFavorite}
                   setActiveTab={setActiveTab}
-                  onSelectRestaurant={(spot) => setSelectedRestaurant(spot)} // <--- ADDED Prop
+                  onSelectRestaurant={(spot) => setSelectedRestaurant(spot)}
+                  onSelectBusinessProfile={(spot) =>
+                    setSelectedBusinessProfile(spot)
+                  } // <--- NEW Prop
                 />
               )}
               {activeTab === "profile" && (
