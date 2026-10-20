@@ -6,8 +6,11 @@ import DiscoverView from "./views/DiscoverView";
 import FavoritesView from "./views/FavoritesView";
 import ProfileView from "./views/ProfileView";
 import DetailView from "./views/DetailView";
-import BusinessProfileView from "./views/BusinessProfileView"; // <--- NEW: Import BusinessProfileView
+import BusinessProfileView from "./views/BusinessProfileView";
+import LoginView from "./views/LoginView"; // <--- NEW
+import RegisterView from "./views/RegisterView"; // <--- NEW
 import { supabase } from "./supabaseClient";
+import "./views/AuthViews.css"; // <--- NEW: Import CSS for auth views
 import "./App.css";
 
 export default function App() {
@@ -15,9 +18,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [session, setSession] = useState(null);
 
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  // <--- NEW: State to track if we show 'login' or 'register' when signed out
+  const [authViewMode, setAuthViewMode] = useState("login");
 
-  // <--- NEW: State to manage when a user is viewing a business storefront profile
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedBusinessProfile, setSelectedBusinessProfile] = useState(null);
 
   useEffect(() => {
@@ -61,7 +65,7 @@ export default function App() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSelectedRestaurant(null);
-    setSelectedBusinessProfile(null); // <--- NEW: Reset business profile on tab switch
+    setSelectedBusinessProfile(null);
   };
 
   return (
@@ -70,14 +74,28 @@ export default function App() {
         <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
         <main className="app-content">
-          {/* <--- NEW: Priority 1: If a business profile is open, show BusinessProfileView */}
-          {selectedBusinessProfile ? (
+          {/* --- GATEWAY: If not signed in, show Login or Register view by default --- */}
+          {!session ? (
+            authViewMode === "login" ? (
+              <LoginView
+                onBack={() => setAuthViewMode("login")} // or handle guest mode if needed
+                onLoginSuccess={(newSession) => setSession(newSession)}
+                switchToRegister={() => setAuthViewMode("register")}
+              />
+            ) : (
+              <RegisterView
+                onBack={() => setAuthViewMode("login")}
+                switchToLogin={() => setAuthViewMode("login")}
+              />
+            )
+          ) : selectedBusinessProfile ? (
+            /* Priority 1: Business Profile View */
             <BusinessProfileView
               business={selectedBusinessProfile}
               onBack={() => setSelectedBusinessProfile(null)}
             />
           ) : selectedRestaurant ? (
-            /* Priority 2: If a restaurant detail is open, show DetailView */
+            /* Priority 2: Detail View */
             <DetailView
               restaurant={selectedRestaurant}
               onBack={() => setSelectedRestaurant(null)}
@@ -88,7 +106,7 @@ export default function App() {
               }
             />
           ) : (
-            /* Priority 3: Otherwise, show the active tab feed */
+            /* Priority 3: Main Tabbed Feeds */
             <>
               {activeTab === "home" && (
                 <HomeView
@@ -97,7 +115,7 @@ export default function App() {
                   onSelectRestaurant={(spot) => setSelectedRestaurant(spot)}
                   onSelectBusinessProfile={(spot) =>
                     setSelectedBusinessProfile(spot)
-                  } // <--- NEW Prop
+                  }
                 />
               )}
               {activeTab === "discover" && (
@@ -107,7 +125,7 @@ export default function App() {
                   onSelectRestaurant={(spot) => setSelectedRestaurant(spot)}
                   onSelectBusinessProfile={(spot) =>
                     setSelectedBusinessProfile(spot)
-                  } // <--- NEW Prop
+                  }
                 />
               )}
               {activeTab === "favorites" && (
@@ -118,17 +136,25 @@ export default function App() {
                   onSelectRestaurant={(spot) => setSelectedRestaurant(spot)}
                   onSelectBusinessProfile={(spot) =>
                     setSelectedBusinessProfile(spot)
-                  } // <--- NEW Prop
+                  }
                 />
               )}
               {activeTab === "profile" && (
-                <ProfileView session={session} setSession={setSession} />
+                <ProfileView
+                  session={session}
+                  setSession={setSession}
+                  onNavigateToLogin={() => setAuthViewMode("login")}
+                  onNavigateToRegister={() => setAuthViewMode("register")}
+                />
               )}
             </>
           )}
         </main>
 
-        <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
+        {/* Only show bottom navigation if user is logged in */}
+        {session && (
+          <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
+        )}
       </div>
     </div>
   );

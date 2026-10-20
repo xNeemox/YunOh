@@ -1,0 +1,152 @@
+.auth-penpot-container {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.auth-brand-badge {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #b8543a; /* Terracotta brand color */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(184, 84, 58, 0.3);
+  margin: 10px 0 120px 0;
+  letter-spacing: 0.5px;
+}
+
+.auth-text-header {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 16px;
+  padding-left: 4px;
+}
+
+.auth-text-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #b8543a;
+  margin: 0;
+}
+
+.auth-text-header p {
+  font-size: 0.85rem;
+  color: #b8543a;
+  margin: 4px 0 0 0;
+  opacity: 0.8;
+}
+
+.auth-penpot-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.penpot-input-group {
+  position: relative;
+  width: 100%;
+  background-color: var(--bg-input, #f0f3f8);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+  height: 50px;
+}
+
+.penpot-input-icon {
+  color: var(--text-secondary, #9ca3af);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.penpot-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  color: var(--text-primary, #333);
+}
+
+.penpot-input::placeholder {
+  color: #9ca3af;
+}
+
+.penpot-eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary, #9ca3af);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.penpot-submit-btn {
+  width: 100%;
+  height: 50px;
+  border-radius: 25px;
+  background-color: #b8543a;
+  color: #ffffff;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(184, 84, 58, 0.25);
+  margin-top: 6px;
+  transition: opacity 0.2s;
+}
+
+.penpot-submit-btn:hover {
+  opacity: 0.9;
+}
+
+.penpot-footer-prompt {
+  margin-top: 20px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.penpot-link-btn {
+  background: none;
+  border: none;
+  color: #b8543a;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.auth-alert {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+}
+
+.auth-alert.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.auth-alert.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
