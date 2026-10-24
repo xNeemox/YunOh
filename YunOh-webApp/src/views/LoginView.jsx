@@ -22,17 +22,46 @@ export default function LoginView({ onLoginSuccess, switchToRegister }) {
     setLoading(true);
     setErrorMessage("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    // 1. Authenticate user credentials with Supabase Auth
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      setErrorMessage(error.message);
+    if (authError) {
+      setErrorMessage(authError.message);
       setLoading(false);
-    } else {
-      setLoading(false);
-      if (onLoginSuccess) onLoginSuccess(data.session);
+      return;
+    }
+
+    const userId = authData.user?.id;
+
+    if (userId) {
+      // 2. Fetch their role from your public.profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, full_name, username")
+        .eq("id", userId)
+        .single();
+
+      if (profileError) {
+        setErrorMessage(
+          "Login successful, but failed to fetch user role: " +
+            profileError.message,
+        );
+        setLoading(false);
+      } else {
+        setLoading(false);
+        // 3. Pass both session and role up to App.jsx for role-based routing
+        if (onLoginSuccess) {
+          onLoginSuccess({
+            session: authData.session,
+            role: profileData.role, // 'consumer', 'owner', or 'admin'
+            profile: profileData,
+          });
+        }
+      }
     }
   };
 
@@ -57,8 +86,8 @@ export default function LoginView({ onLoginSuccess, switchToRegister }) {
         <div className="penpot-input-group">
           <Mail size={18} className="penpot-input-icon" />
           <input
-            type="text"
-            placeholder="Email/Phone"
+            type="email"
+            placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required

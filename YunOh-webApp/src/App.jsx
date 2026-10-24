@@ -9,7 +9,7 @@ import DetailView from "./views/DetailView";
 import BusinessProfileView from "./views/BusinessProfileView";
 import LoginView from "./views/LoginView";
 import RegisterView from "./views/RegisterView";
-import BusinessRegistrationModal from "./components/BusinessRegistrationModal"; // <--- 1. IMPORT MODAL
+import BusinessRegistrationModal from "./components/BusinessRegistrationModal";
 import { supabase } from "./supabaseClient";
 import "./views/AuthViews.css";
 import "./App.css";
@@ -19,23 +19,48 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [session, setSession] = useState(null);
 
+  const [userRole, setUserRole] = useState(null);
   const [authViewMode, setAuthViewMode] = useState("login");
 
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedBusinessProfile, setSelectedBusinessProfile] = useState(null);
 
-  // <--- 2. ADD MODAL STATE HERE
   const [isBusinessRegOpen, setIsBusinessRegOpen] = useState(false);
 
+  // Helper function to fetch role from profiles table
+  const fetchUserRole = async (userId) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (!error && data) {
+      setUserRole(data.role);
+    } else {
+      setUserRole("consumer"); // Fallback default
+    }
+  };
+
   useEffect(() => {
+    // Check active session on initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session?.user?.id) {
+        fetchUserRole(session.user.id);
+      }
     });
 
+    // Listen for auth state changes (login, logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session?.user?.id) {
+        fetchUserRole(session.user.id);
+      } else {
+        setUserRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -71,6 +96,15 @@ export default function App() {
     setSelectedBusinessProfile(null);
   };
 
+  // <--- NEW: Dedicated sign-out handler that resets navigation back to Home
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setSession(null);
+    setUserRole(null);
+    setActiveTab("home");
+    setAuthViewMode("login");
+  };
+
   return (
     <div className="desktop-container">
       <div className="phone-frame" data-theme={isDarkMode ? "dark" : "light"}>
@@ -81,7 +115,11 @@ export default function App() {
             authViewMode === "login" ? (
               <LoginView
                 onBack={() => setAuthViewMode("login")}
-                onLoginSuccess={(newSession) => setSession(newSession)}
+                onLoginSuccess={(authData) => {
+                  setSession(authData.session);
+                  setUserRole(authData.role);
+                  setActiveTab("home");
+                }}
                 switchToRegister={() => setAuthViewMode("register")}
               />
             ) : (
@@ -90,6 +128,25 @@ export default function App() {
                 switchToLogin={() => setAuthViewMode("login")}
               />
             )
+          ) : userRole === "admin" ? (
+            /* --- ADMIN RESPONSIVE DASHBOARD VIEW --- */
+            <div
+              className="admin-dashboard-container"
+              style={{ padding: "16px" }}
+            >
+              <h2>Admin Control Center 🛡️</h2>
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+                Welcome, Admin! Here you can manage verified dining spots and
+                moderate user accounts.
+              </p>
+              <button
+                onClick={handleSignOut}
+                className="penpot-submit-btn"
+                style={{ marginTop: "20px" }}
+              >
+                Sign Out Admin
+              </button>
+            </div>
           ) : selectedBusinessProfile ? (
             <BusinessProfileView
               business={selectedBusinessProfile}
@@ -142,24 +199,22 @@ export default function App() {
                 <ProfileView
                   session={session}
                   setSession={setSession}
+                  userRole={userRole}
+                  onSignOut={handleSignOut} // <--- Pass down sign out handler
                   onNavigateToLogin={() => setAuthViewMode("login")}
                   onNavigateToRegister={() => setAuthViewMode("register")}
-                  onOpenBusinessRegistration={() => setIsBusinessRegOpen(true)} // <--- 3. PASS CALLBACK HERE
+                  onOpenBusinessRegistration={() => setIsBusinessRegOpen(true)}
                 />
               )}
             </>
           )}
         </main>
 
-        {/* --- 4. RENDER MODAL AT ROOT LEVEL --- */}
         <BusinessRegistrationModal
           isOpen={isBusinessRegOpen}
           onClose={() => setIsBusinessRegOpen(false)}
           onSubmitSuccess={(formData) => {
-            console.log(
-              "Registered business data pending manual review:",
-              formData,
-            );
+            console.log("Registered business data:", formData);
           }}
         />
 

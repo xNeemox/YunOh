@@ -19,6 +19,7 @@ import "./ProfileView.css";
 export default function ProfileView({
   session,
   setSession,
+  onSignOut, // <--- 1. ACCEPT GLOBAL SIGN OUT PROP
   onNavigateToLogin,
   onNavigateToRegister,
   onOpenBusinessRegistration,
@@ -107,11 +108,14 @@ export default function ProfileView({
     }
   };
 
+  // <--- 2. USE THE GLOBAL SIGN OUT PASSED FROM APP.JSX
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setSession(null);
-    setMyVouchers([]);
-    setOwnedBusinesses([]);
+    if (onSignOut) {
+      onSignOut();
+    } else {
+      await supabase.auth.signOut();
+      setSession(null);
+    }
   };
 
   if (!session) {
@@ -119,28 +123,60 @@ export default function ProfileView({
       <div className="profile-view">
         <div className="welcome-banner">
           <h3>Your Account 👤</h3>
-          <p className="profile-subtitle-muted">
+          <p
+            style={{
+              color: "var(--text-secondary)",
+              fontSize: "0.9rem",
+              margin: "4px 0 16px 0",
+            }}
+          >
             Sign in to view your vouchers, manage saved spots, and access
             merchant tools.
           </p>
         </div>
 
-        <div className="profile-logged-out-card">
-          <User size={48} className="logged-out-icon" />
-          <h4 className="logged-out-title">You are not signed in</h4>
-          <p className="logged-out-desc">
+        <div
+          className="profile-logged-out-card"
+          style={{
+            textAlign: "center",
+            padding: "30px 20px",
+            background: "var(--bg-card)",
+            borderRadius: "16px",
+            border: "1px solid var(--border-color, #eee)",
+          }}
+        >
+          <User
+            size={48}
+            color="var(--text-secondary)"
+            style={{ opacity: 0.4, marginBottom: "12px" }}
+          />
+          <h4 style={{ margin: "0 0 6px 0" }}>You are not signed in</h4>
+          <p
+            style={{
+              fontSize: "0.85rem",
+              color: "var(--text-secondary)",
+              marginBottom: "20px",
+            }}
+          >
             Access your digital wallet and personalized local feed.
           </p>
-          <div className="logged-out-actions">
+          <div
+            style={{ display: "flex", gap: "10px", justifyContent: "center" }}
+          >
             <button
               onClick={onNavigateToLogin}
-              className="auth-submit-btn btn-pad-custom"
+              className="auth-submit-btn"
+              style={{ padding: "10px 20px" }}
             >
               Sign In
             </button>
             <button
               onClick={onNavigateToRegister}
-              className="auth-submit-btn btn-secondary-custom"
+              className="auth-submit-btn"
+              style={{
+                padding: "10px 20px",
+                backgroundColor: "var(--struct-secondary)",
+              }}
             >
               Register
             </button>
@@ -154,22 +190,69 @@ export default function ProfileView({
     <div className="profile-view">
       <div className="welcome-banner">
         <h3>My Profile & Dashboard 👤</h3>
-        <p className="profile-subtitle-muted">
+        <p
+          style={{
+            color: "var(--text-secondary)",
+            fontSize: "0.9rem",
+            margin: "4px 0 12px 0",
+          }}
+        >
           Manage your consumer settings or monitor your merchant establishment
           stats.
         </p>
 
         {/* User Mode Switcher Tabs */}
-        <div className="mode-switcher-container">
+        <div
+          style={{
+            display: "flex",
+            background: "rgba(0,0,0,0.05)",
+            padding: "4px",
+            borderRadius: "12px",
+            gap: "4px",
+            marginTop: "10px",
+          }}
+        >
           <button
             onClick={() => setUserMode("consumer")}
-            className={`mode-tab-btn ${userMode === "consumer" ? "active" : ""}`}
+            style={{
+              flex: 1,
+              padding: "8px",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: "600",
+              fontSize: "0.85rem",
+              cursor: "pointer",
+              backgroundColor:
+                userMode === "consumer" ? "var(--bg-card)" : "transparent",
+              color:
+                userMode === "consumer"
+                  ? "var(--accent-color)"
+                  : "var(--text-secondary)",
+              boxShadow:
+                userMode === "consumer" ? "0 2px 6px rgba(0,0,0,0.05)" : "none",
+            }}
           >
             Consumer Mode
           </button>
           <button
             onClick={() => setUserMode("business")}
-            className={`mode-tab-btn ${userMode === "business" ? "active" : ""}`}
+            style={{
+              flex: 1,
+              padding: "8px",
+              borderRadius: "8px",
+              border: "none",
+              fontWeight: "600",
+              fontSize: "0.85rem",
+              cursor: "pointer",
+              backgroundColor:
+                userMode === "business" ? "var(--bg-card)" : "transparent",
+              color:
+                userMode === "business"
+                  ? "var(--accent-color)"
+                  : "var(--text-secondary)",
+              boxShadow:
+                userMode === "business" ? "0 2px 6px rgba(0,0,0,0.05)" : "none",
+            }}
           >
             Business Mode 🏢
           </button>
@@ -177,13 +260,47 @@ export default function ProfileView({
       </div>
 
       {/* User Info Header Card */}
-      <div className="profile-card profile-user-info-card">
-        <div className="profile-avatar profile-avatar-wrapper">
+      <div
+        className="profile-card"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "14px",
+          margin: "16px 0",
+          background: "var(--bg-card)",
+          padding: "14px",
+          borderRadius: "12px",
+          border: "1px solid var(--border-color, #eee)",
+        }}
+      >
+        <div
+          className="profile-avatar"
+          style={{
+            width: "45px",
+            height: "45px",
+            borderRadius: "50%",
+            backgroundColor: "var(--accent-color)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
           <User size={22} color="#FFFFFF" />
         </div>
-        <div className="profile-info profile-info-text-wrap">
-          <span className="profile-signed-in-label">Signed in as</span>
-          <h4 className="profile-email-text">{session.user.email}</h4>
+        <div className="profile-info" style={{ overflow: "hidden", flex: 1 }}>
+          <span style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+            Signed in as
+          </span>
+          <h4
+            style={{
+              margin: "2px 0 0 0",
+              wordBreak: "break-all",
+              fontSize: "0.9rem",
+            }}
+          >
+            {session.user.email}
+          </h4>
         </div>
       </div>
 
@@ -191,26 +308,85 @@ export default function ProfileView({
       {userMode === "consumer" && (
         <>
           {/* Consumer Activity Stats */}
-          <div className="consumer-stats-grid">
-            <div className="stat-box-card">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: "10px",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                background: "var(--bg-card)",
+                padding: "12px",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color, #eee)",
+                textAlign: "center",
+              }}
+            >
               <Activity
                 size={18}
                 color="var(--accent-color)"
-                className="stat-icon-margin"
+                style={{ marginBottom: "4px" }}
               />
-              <div className="stat-box-label">Vouchers Claimed</div>
-              <div className="stat-box-value">{myVouchers.length}</div>
+              <div
+                style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}
+              >
+                Vouchers Claimed
+              </div>
+              <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>
+                {myVouchers.length}
+              </div>
             </div>
-            <div className="stat-box-card">
-              <Heart size={18} color="#EF4444" className="stat-icon-margin" />
-              <div className="stat-box-label">Saved Favorites</div>
-              <div className="stat-box-value">3 Spots</div>
+            <div
+              style={{
+                background: "var(--bg-card)",
+                padding: "12px",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color, #eee)",
+                textAlign: "center",
+              }}
+            >
+              <Heart
+                size={18}
+                color="#EF4444"
+                style={{ marginBottom: "4px" }}
+              />
+              <div
+                style={{ fontSize: "0.7rem", color: "var(--text-secondary)" }}
+              >
+                Saved Favorites
+              </div>
+              <div style={{ fontSize: "1.1rem", fontWeight: "bold" }}>
+                3 Spots
+              </div>
             </div>
           </div>
 
           {/* --- SETTINGS-LIKE ACTIVITY HUB --- */}
-          <div className="settings-activity-hub">
-            <div className="settings-hub-header">Activity & Preferences</div>
+          <div
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-color, #eee)",
+              borderRadius: "12px",
+              overflow: "hidden",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--border-color, #eee)",
+                fontSize: "0.8rem",
+                fontWeight: "bold",
+                color: "var(--text-secondary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
+              Activity & Preferences
+            </div>
 
             {/* Row 1: My Vouchers Wallet */}
             <div>
@@ -220,47 +396,120 @@ export default function ProfileView({
                     activeSettingTab === "vouchers" ? null : "vouchers",
                   )
                 }
-                className={`settings-row-item ${activeSettingTab === "vouchers" ? "active-row" : ""}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  borderBottom: "1px solid var(--border-color, #eee)",
+                  backgroundColor:
+                    activeSettingTab === "vouchers"
+                      ? "rgba(0,0,0,0.02)"
+                      : "transparent",
+                }}
               >
-                <div className="settings-row-left">
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
                   <Ticket size={18} color="var(--accent-color)" />
-                  <span className="settings-row-title">
+                  <span style={{ fontSize: "0.9rem", fontWeight: "500" }}>
                     My Vouchers Wallet 🎟️
                   </span>
                 </div>
-                <div className="settings-row-right">
-                  <span className="settings-row-meta">
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
                     {myVouchers.length} items
                   </span>
                   <ChevronRight
                     size={16}
-                    className={`chevron-icon ${activeSettingTab === "vouchers" ? "rotated" : ""}`}
+                    color="var(--text-secondary)"
+                    style={{
+                      transform:
+                        activeSettingTab === "vouchers"
+                          ? "rotate(90deg)"
+                          : "none",
+                      transition: "transform 0.2s",
+                    }}
                   />
                 </div>
               </div>
 
               {/* Expandable Vouchers List */}
               {activeSettingTab === "vouchers" && (
-                <div className="settings-drawer-content">
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(0,0,0,0.01)",
+                    borderBottom: "1px solid var(--border-color, #eee)",
+                  }}
+                >
                   {vouchersLoading ? (
-                    <p className="drawer-loading-text">
+                    <p
+                      style={{
+                        fontSize: "0.85rem",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
                       Loading your vouchers...
                     </p>
                   ) : myVouchers.length === 0 ? (
-                    <p className="drawer-loading-text">
+                    <p
+                      style={{
+                        fontSize: "0.85rem",
+                        color: "var(--text-secondary)",
+                        margin: 0,
+                      }}
+                    >
                       No vouchers claimed yet.
                     </p>
                   ) : (
-                    <div className="drawer-vouchers-list">
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                      }}
+                    >
                       {myVouchers.map((v) => (
-                        <div key={v.id} className="drawer-voucher-item">
-                          <div className="drawer-voucher-biz">
+                        <div
+                          key={v.id}
+                          style={{
+                            padding: "8px",
+                            border: "1px solid var(--accent-color)",
+                            borderRadius: "6px",
+                            background: "var(--bg-card)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: "bold",
+                              color: "var(--accent-color)",
+                            }}
+                          >
                             {v.businesses?.name || "Local Spot"}
                           </div>
-                          <div className="drawer-voucher-promo">
+                          <div style={{ fontSize: "0.8rem", margin: "2px 0" }}>
                             {v.promo_text}
                           </div>
-                          <div className="drawer-voucher-pill">
+                          <div
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: "800",
+                              background: "rgba(0,0,0,0.05)",
+                              display: "inline-block",
+                              padding: "1px 5px",
+                              borderRadius: "4px",
+                            }}
+                          >
                             {v.voucher_code}
                           </div>
                         </div>
@@ -279,29 +528,75 @@ export default function ProfileView({
                     activeSettingTab === "reviews" ? null : "reviews",
                   )
                 }
-                className={`settings-row-item ${activeSettingTab === "reviews" ? "active-row" : ""}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  borderBottom: "1px solid var(--border-color, #eee)",
+                  backgroundColor:
+                    activeSettingTab === "reviews"
+                      ? "rgba(0,0,0,0.02)"
+                      : "transparent",
+                }}
               >
-                <div className="settings-row-left">
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
                   <Star size={18} color="#F59E0B" fill="#F59E0B" />
-                  <span className="settings-row-title">
+                  <span style={{ fontSize: "0.9rem", fontWeight: "500" }}>
                     My Reviews & Comments ⭐
                   </span>
                 </div>
-                <div className="settings-row-right">
-                  <span className="settings-row-meta">2 left</span>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    2 left
+                  </span>
                   <ChevronRight
                     size={16}
-                    className={`chevron-icon ${activeSettingTab === "reviews" ? "rotated" : ""}`}
+                    color="var(--text-secondary)"
+                    style={{
+                      transform:
+                        activeSettingTab === "reviews"
+                          ? "rotate(90deg)"
+                          : "none",
+                      transition: "transform 0.2s",
+                    }}
                   />
                 </div>
               </div>
 
               {activeSettingTab === "reviews" && (
-                <div className="settings-drawer-content">
-                  <div className="drawer-review-item-title">
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(0,0,0,0.01)",
+                    borderBottom: "1px solid var(--border-color, #eee)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "var(--text-primary)",
+                      marginBottom: "4px",
+                    }}
+                  >
                     <b>Delfin Brews Cafe</b> — 5 ⭐
                   </div>
-                  <div className="drawer-review-item-body">
+                  <div
+                    style={{
+                      fontSize: "0.78rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
                     "Super cozy ambiance and great iced lattes!"
                   </div>
                 </div>
@@ -316,28 +611,65 @@ export default function ProfileView({
                     activeSettingTab === "favorites" ? null : "favorites",
                   )
                 }
-                className={`settings-row-item ${activeSettingTab === "favorites" ? "active-row" : ""}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "14px 16px",
+                  cursor: "pointer",
+                  backgroundColor:
+                    activeSettingTab === "favorites"
+                      ? "rgba(0,0,0,0.02)"
+                      : "transparent",
+                }}
               >
-                <div className="settings-row-left">
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
                   <Bookmark size={18} color="#EF4444" fill="#EF4444" />
-                  <span className="settings-row-title">Saved Favorites ❤️</span>
+                  <span style={{ fontSize: "0.9rem", fontWeight: "500" }}>
+                    Saved Favorites ❤️
+                  </span>
                 </div>
-                <div className="settings-row-right">
-                  <span className="settings-row-meta">3 spots</span>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    3 spots
+                  </span>
                   <ChevronRight
                     size={16}
-                    className={`chevron-icon ${activeSettingTab === "favorites" ? "rotated" : ""}`}
+                    color="var(--text-secondary)"
+                    style={{
+                      transform:
+                        activeSettingTab === "favorites"
+                          ? "rotate(90deg)"
+                          : "none",
+                      transition: "transform 0.2s",
+                    }}
                   />
                 </div>
               </div>
 
               {activeSettingTab === "favorites" && (
-                <div className="settings-drawer-content favorites-list-wrap">
-                  <div className="favorite-spot-row">
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    background: "rgba(0,0,0,0.01)",
+                  }}
+                >
+                  <div style={{ fontSize: "0.8rem", fontWeight: "500" }}>
                     • Centro Bakery & Restaurant
                   </div>
-                  <div className="favorite-spot-row">• Delfin Brews Cafe</div>
-                  <div className="favorite-spot-row">
+                  <div style={{ fontSize: "0.8rem", fontWeight: "500" }}>
+                    • Delfin Brews Cafe
+                  </div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: "500" }}>
                     • Isabela Grill & Barbecue
                   </div>
                 </div>
@@ -349,35 +681,95 @@ export default function ProfileView({
 
       {/* ================= BUSINESS MODE (MERCHANT DASHBOARD) ================= */}
       {userMode === "business" && (
-        <div className="merchant-dashboard-container">
-          <h4 className="merchant-dashboard-header">
+        <div
+          style={{
+            background: "var(--bg-card)",
+            border: "1px solid var(--accent-color)",
+            borderRadius: "12px",
+            padding: "16px",
+            marginBottom: "16px",
+          }}
+        >
+          <h4
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "0.95rem",
+              margin: "0 0 12px 0",
+              color: "var(--accent-color)",
+            }}
+          >
             <Store size={18} /> Merchant Analytics & Storefront
           </h4>
 
           {ownedBusinesses.length === 0 ? (
-            <div className="merchant-empty-wrapper">
-              <p className="merchant-empty-text">
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <p
+                style={{
+                  fontSize: "0.85rem",
+                  color: "var(--text-secondary)",
+                  marginBottom: "12px",
+                }}
+              >
                 You do not own a registered business yet. Register one to access
                 merchant analytics!
               </p>
               <button
                 onClick={onOpenBusinessRegistration}
-                className="auth-submit-btn btn-sm-text"
+                className="auth-submit-btn"
+                style={{ fontSize: "0.85rem" }}
               >
                 Register Business Now 🏢
               </button>
             </div>
           ) : (
             <>
-              <div className="merchant-biz-name">
+              <div
+                style={{
+                  fontSize: "0.9rem",
+                  fontWeight: "bold",
+                  marginBottom: "10px",
+                }}
+              >
                 {editingBusiness?.name || ownedBusinesses[0].name}
               </div>
 
               {/* Analytics Stats Grid */}
-              <div className="merchant-stats-grid">
-                <div className="merchant-stat-box">
-                  <div className="merchant-stat-label">Rating Score</div>
-                  <div className="merchant-stat-val-row">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "8px",
+                  marginBottom: "14px",
+                }}
+              >
+                <div
+                  style={{
+                    background: "rgba(0,0,0,0.03)",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Rating Score
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px",
+                    }}
+                  >
                     <Star
                       size={14}
                       fill="var(--accent-color)"
@@ -386,23 +778,92 @@ export default function ProfileView({
                     {editingBusiness?.rating || 5.0}
                   </div>
                 </div>
-                <div className="merchant-stat-box">
-                  <div className="merchant-stat-label">Total Reviews</div>
-                  <div className="merchant-stat-val-row">
+                <div
+                  style={{
+                    background: "rgba(0,0,0,0.03)",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Total Reviews
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px",
+                    }}
+                  >
                     <MessageSquare size={14} color="var(--struct-secondary)" />{" "}
                     {editingBusiness?.reviews || 1}
                   </div>
                 </div>
-                <div className="merchant-stat-box">
-                  <div className="merchant-stat-label">Profile Visits</div>
-                  <div className="merchant-stat-val-row">
+                <div
+                  style={{
+                    background: "rgba(0,0,0,0.03)",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Profile Visits
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px",
+                    }}
+                  >
                     <Eye size={14} color="var(--accent-color)" />{" "}
                     {editingBusiness?.profile_visits || 42}
                   </div>
                 </div>
-                <div className="merchant-stat-box">
-                  <div className="merchant-stat-label">Followers</div>
-                  <div className="merchant-stat-val-row">
+                <div
+                  style={{
+                    background: "rgba(0,0,0,0.03)",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: "0.7rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Followers
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: "bold",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "4px",
+                    }}
+                  >
                     <Users size={14} color="var(--accent-color)" /> 24
                   </div>
                 </div>
@@ -411,22 +872,44 @@ export default function ProfileView({
               {/* Storefront Asset Manager Form */}
               <form
                 onSubmit={handleUpdateStorefront}
-                className="merchant-asset-form"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
               >
-                <div className="asset-form-heading">
+                <div
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: "bold",
+                    color: "var(--text-primary)",
+                  }}
+                >
                   Manage Storefront Assets
                 </div>
 
                 {updateStatus && (
                   <div
-                    className={`update-status-msg ${updateStatus.includes("Error") ? "error-text" : "success-text"}`}
+                    style={{
+                      fontSize: "0.75rem",
+                      color: updateStatus.includes("Error")
+                        ? "#EF4444"
+                        : "#10B981",
+                    }}
                   >
                     {updateStatus}
                   </div>
                 )}
 
-                <div className="input-group">
-                  <label className="asset-input-label">Logo Image URL</label>
+                <div className="input-group" style={{ textAlign: "left" }}>
+                  <label
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Logo Image URL
+                  </label>
                   <input
                     type="text"
                     value={editingBusiness?.logo_url || ""}
@@ -437,12 +920,26 @@ export default function ProfileView({
                       })
                     }
                     placeholder="https://example.com/logo.jpg"
-                    className="auth-input asset-text-input"
+                    className="auth-input"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border-color)",
+                      fontSize: "0.85rem",
+                    }}
                   />
                 </div>
 
-                <div className="input-group">
-                  <label className="asset-input-label">Cover Banner URL</label>
+                <div className="input-group" style={{ textAlign: "left" }}>
+                  <label
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Cover Banner URL
+                  </label>
                   <input
                     type="text"
                     value={editingBusiness?.cover_image_url || ""}
@@ -453,12 +950,26 @@ export default function ProfileView({
                       })
                     }
                     placeholder="https://example.com/cover.jpg"
-                    className="auth-input asset-text-input"
+                    className="auth-input"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border-color)",
+                      fontSize: "0.85rem",
+                    }}
                   />
                 </div>
 
-                <div className="input-group">
-                  <label className="asset-input-label">Active Promo Text</label>
+                <div className="input-group" style={{ textAlign: "left" }}>
+                  <label
+                    style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Active Promo Text
+                  </label>
                   <input
                     type="text"
                     value={editingBusiness?.promo || ""}
@@ -469,13 +980,25 @@ export default function ProfileView({
                       })
                     }
                     placeholder="10% off on special items"
-                    className="auth-input asset-text-input"
+                    className="auth-input"
+                    style={{
+                      width: "100%",
+                      padding: "8px",
+                      borderRadius: "6px",
+                      border: "1px solid var(--border-color)",
+                      fontSize: "0.85rem",
+                    }}
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="auth-submit-btn btn-sm-text btn-mt-custom"
+                  className="auth-submit-btn"
+                  style={{
+                    padding: "8px",
+                    fontSize: "0.85rem",
+                    marginTop: "4px",
+                  }}
                 >
                   Save Storefront Changes
                 </button>
@@ -488,7 +1011,8 @@ export default function ProfileView({
       {/* Sign Out Button */}
       <button
         onClick={handleLogout}
-        className="auth-submit-btn logout-btn btn-full-width"
+        className="auth-submit-btn logout-btn"
+        style={{ width: "100%" }}
       >
         <LogOut size={16} /> Sign Out
       </button>

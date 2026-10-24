@@ -26,20 +26,39 @@ export default function RegisterView({ switchToLogin }) {
     setErrorMessage("");
     setSuccessMessage("");
 
-    // Supabase auth sign up (using email)
-    const { error } = await supabase.auth.signUp({
+    // 1. Sign up the user in Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { username },
-      },
     });
 
-    if (error) {
-      setErrorMessage(error.message);
-    } else {
-      setSuccessMessage("Registration successful! You can now sign in.");
+    if (authError) {
+      setErrorMessage(authError.message);
+      setLoading(false);
+      return;
     }
+
+    const userId = authData.user?.id;
+
+    if (userId) {
+      // 2. Insert the corresponding record into your public.profiles table
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: userId,
+          username: username,
+          email: email,
+          full_name: username, // Using username as default full_name
+          role: "consumer", // Default role as per your table schema
+        },
+      ]);
+
+      if (profileError) {
+        setErrorMessage(profileError.message);
+      } else {
+        setSuccessMessage("Registration successful! You can now sign in.");
+      }
+    }
+
     setLoading(false);
   };
 
@@ -82,8 +101,8 @@ export default function RegisterView({ switchToLogin }) {
         <div className="penpot-input-group">
           <Mail size={18} className="penpot-input-icon" />
           <input
-            type="text"
-            placeholder="Email/Phone"
+            type="email"
+            placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
