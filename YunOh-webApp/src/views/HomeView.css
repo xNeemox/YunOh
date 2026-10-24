@@ -182,3 +182,66 @@
 .fav-toggle-btn.active {
   background-color: var(--card-bg);
 }
+
+.home-subtitle-muted {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 4px 0 16px 0;
+}
+.home-section-title {
+  margin: 16px 0 12px 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+.loading-badge {
+  font-size: 0.75rem;
+  color: var(--accent-color);
+  font-weight: normal;
+}
+.home-empty-text {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 20px;
+}
+.cursor-pointer-cls {
+  cursor: pointer;
+}
+.align-items-center-cls {
+  align-items: center;
+}
+.merchant-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--accent-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+.merchant-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.merchant-avatar-fallback {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+.merchant-name-wrap {
+  flex: 1;
+  margin-left: 10px;
+}
+.margin-zero-cls {
+  margin: 0;
+}
+.whitespace-nowrap-cls {
+  white-space: nowrap;
+}
+.margin-top-sm {
+  margin-top: 8px;
+}

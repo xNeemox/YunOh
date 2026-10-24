@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Search, Star, MapPin, Sparkles, Heart } from "lucide-react";
+import { supabase } from "../supabaseClient";
 import "./HomeView.css";
 
 export default function HomeView({
@@ -11,7 +12,29 @@ export default function HomeView({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const restaurants = [
+  // Supabase live businesses state
+  const [supabaseBusinesses, setSupabaseBusinesses] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchLiveBusinesses();
+  }, []);
+
+  const fetchLiveBusinesses = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("businesses").select("*");
+
+      if (!error && data) {
+        setSupabaseBusinesses(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback static mock list if no database items exist yet
+  const fallbackRestaurants = [
     {
       id: 1,
       name: "Uncle Bob's Panciteria",
@@ -65,6 +88,10 @@ export default function HomeView({
     },
   ];
 
+  // Use Supabase data if available, otherwise fallback to mock data
+  const restaurants =
+    supabaseBusinesses.length > 0 ? supabaseBusinesses : fallbackRestaurants;
+
   const categories = [
     "All",
     "Local Delicacy",
@@ -75,7 +102,8 @@ export default function HomeView({
   const filteredRestaurants = restaurants.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.category &&
+        item.category.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory =
       selectedCategory === "All" || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -85,14 +113,9 @@ export default function HomeView({
     <div className="home-view">
       <div className="welcome-banner">
         <h3>Discover Local Flavors 🍜</h3>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            fontSize: "0.9rem",
-            margin: "4px 0 16px 0",
-          }}
-        >
-          Find the best dining spots and digital promos around you.
+        <p className="home-subtitle-muted">
+          Find the best dining spots and digital promos around you in Delfin
+          Albano.
         </p>
 
         <div className="search-bar-container">
@@ -120,24 +143,13 @@ export default function HomeView({
       </div>
 
       <div className="restaurant-list">
-        <h4
-          style={{
-            margin: "16px 0 12px 0",
-            fontSize: "1rem",
-            color: "var(--text-primary)",
-          }}
-        >
-          Featured Spots Near You
+        <h4 className="home-section-title">
+          Featured Spots Near You{" "}
+          {loading && <span className="loading-badge">(Syncing...)</span>}
         </h4>
 
         {filteredRestaurants.length === 0 ? (
-          <p
-            style={{
-              textAlign: "center",
-              color: "var(--text-secondary)",
-              padding: "20px",
-            }}
-          >
+          <p className="home-empty-text">
             No dining spots found. Try a different search!
           </p>
         ) : (
@@ -146,17 +158,20 @@ export default function HomeView({
             return (
               <div
                 key={spot.id}
-                className="restaurant-card"
-                onClick={() => onSelectRestaurant(spot)} // Triggers Detail View on card click
-                style={{ cursor: "pointer" }}
+                className="restaurant-card cursor-pointer-cls"
+                onClick={() => onSelectRestaurant(spot)}
               >
                 <div
                   className="card-img-placeholder"
-                  style={{ backgroundColor: spot.imageColor }}
+                  style={{
+                    backgroundColor: spot.imageColor || "var(--accent-color)",
+                  }}
                 >
-                  <span className="promo-badge">
-                    <Sparkles size={12} /> {spot.promo}
-                  </span>
+                  {spot.promo && (
+                    <span className="promo-badge">
+                      <Sparkles size={12} /> {spot.promo}
+                    </span>
+                  )}
                   <button
                     className={`fav-toggle-btn ${isFavorited ? "active" : ""}`}
                     onClick={(e) => {
@@ -176,79 +191,53 @@ export default function HomeView({
                 </div>
 
                 <div className="card-body">
-                  <div
-                    className="card-header-row"
-                    style={{ alignItems: "center" }}
-                  >
-                    {/* Circular Merchant Profile Avatar before name */}
+                  <div className="card-header-row align-items-center-cls">
+                    {/* Circular Merchant Profile Avatar */}
                     <div
                       onClick={(e) => {
-                        e.stopPropagation(); // Prevents opening the DetailView
-                        onSelectBusinessProfile(spot); // Opens Business Profile View
+                        e.stopPropagation();
+                        onSelectBusinessProfile(spot);
                       }}
                       title="View Business Profile"
+                      className="merchant-avatar-circle"
                       style={{
-                        width: "36px",
-                        height: "36px",
-                        borderRadius: "50%",
                         backgroundColor:
                           spot.imageColor || "var(--struct-secondary)",
-                        overflow: "hidden",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        cursor: "pointer",
-                        border: "2px solid var(--accent-color)",
-                        boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
                       }}
                     >
                       {spot.logo_url ? (
                         <img
                           src={spot.logo_url}
                           alt={spot.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
+                          className="merchant-avatar-img"
                         />
                       ) : (
-                        <span
-                          style={{
-                            color: "#fff",
-                            fontSize: "0.85rem",
-                            fontWeight: "bold",
-                          }}
-                        >
-                          {spot.name.charAt(0)}
+                        <span className="merchant-avatar-fallback">
+                          {spot.name ? spot.name.charAt(0) : "Y"}
                         </span>
                       )}
                     </div>
 
-                    <div style={{ flex: 1, marginLeft: "10px" }}>
-                      <h4 className="spot-name" style={{ margin: 0 }}>
-                        {spot.name}
-                      </h4>
+                    <div className="merchant-name-wrap">
+                      <h4 className="spot-name margin-zero-cls">{spot.name}</h4>
                     </div>
 
-                    <span
-                      className="spot-rating"
-                      style={{ whiteSpace: "nowrap" }}
-                    >
+                    <span className="spot-rating whitespace-nowrap-cls">
                       <Star
                         size={14}
                         fill="var(--accent-color)"
                         color="var(--accent-color)"
                       />
-                      {spot.rating} ({spot.reviews})
+                      {spot.rating || 4.8} ({spot.reviews || 50}+)
                     </span>
                   </div>
 
-                  <div className="spot-meta" style={{ marginTop: "8px" }}>
-                    <span className="category-tag">{spot.category}</span>
+                  <div className="spot-meta margin-top-sm">
+                    <span className="category-tag">
+                      {spot.category || "Local Spot"}
+                    </span>
                     <span className="spot-distance">
-                      <MapPin size={13} /> {spot.distance}
+                      <MapPin size={13} /> {spot.distance || "1.5 km"}
                     </span>
                   </div>
                 </div>

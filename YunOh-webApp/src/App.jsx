@@ -7,10 +7,11 @@ import FavoritesView from "./views/FavoritesView";
 import ProfileView from "./views/ProfileView";
 import DetailView from "./views/DetailView";
 import BusinessProfileView from "./views/BusinessProfileView";
-import LoginView from "./views/LoginView"; // <--- NEW
-import RegisterView from "./views/RegisterView"; // <--- NEW
+import LoginView from "./views/LoginView";
+import RegisterView from "./views/RegisterView";
+import BusinessRegistrationModal from "./components/BusinessRegistrationModal"; // <--- 1. IMPORT MODAL
 import { supabase } from "./supabaseClient";
-import "./views/AuthViews.css"; // <--- NEW: Import CSS for auth views
+import "./views/AuthViews.css";
 import "./App.css";
 
 export default function App() {
@@ -18,11 +19,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [session, setSession] = useState(null);
 
-  // <--- NEW: State to track if we show 'login' or 'register' when signed out
   const [authViewMode, setAuthViewMode] = useState("login");
 
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedBusinessProfile, setSelectedBusinessProfile] = useState(null);
+
+  // <--- 2. ADD MODAL STATE HERE
+  const [isBusinessRegOpen, setIsBusinessRegOpen] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -74,11 +77,10 @@ export default function App() {
         <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
         <main className="app-content">
-          {/* --- GATEWAY: If not signed in, show Login or Register view by default --- */}
           {!session ? (
             authViewMode === "login" ? (
               <LoginView
-                onBack={() => setAuthViewMode("login")} // or handle guest mode if needed
+                onBack={() => setAuthViewMode("login")}
                 onLoginSuccess={(newSession) => setSession(newSession)}
                 switchToRegister={() => setAuthViewMode("register")}
               />
@@ -89,13 +91,11 @@ export default function App() {
               />
             )
           ) : selectedBusinessProfile ? (
-            /* Priority 1: Business Profile View */
             <BusinessProfileView
               business={selectedBusinessProfile}
               onBack={() => setSelectedBusinessProfile(null)}
             />
           ) : selectedRestaurant ? (
-            /* Priority 2: Detail View */
             <DetailView
               restaurant={selectedRestaurant}
               onBack={() => setSelectedRestaurant(null)}
@@ -106,7 +106,6 @@ export default function App() {
               }
             />
           ) : (
-            /* Priority 3: Main Tabbed Feeds */
             <>
               {activeTab === "home" && (
                 <HomeView
@@ -145,13 +144,25 @@ export default function App() {
                   setSession={setSession}
                   onNavigateToLogin={() => setAuthViewMode("login")}
                   onNavigateToRegister={() => setAuthViewMode("register")}
+                  onOpenBusinessRegistration={() => setIsBusinessRegOpen(true)} // <--- 3. PASS CALLBACK HERE
                 />
               )}
             </>
           )}
         </main>
 
-        {/* Only show bottom navigation if user is logged in */}
+        {/* --- 4. RENDER MODAL AT ROOT LEVEL --- */}
+        <BusinessRegistrationModal
+          isOpen={isBusinessRegOpen}
+          onClose={() => setIsBusinessRegOpen(false)}
+          onSubmitSuccess={(formData) => {
+            console.log(
+              "Registered business data pending manual review:",
+              formData,
+            );
+          }}
+        />
+
         {session && (
           <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
         )}

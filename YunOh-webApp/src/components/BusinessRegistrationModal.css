@@ -1,0 +1,131 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.modal-content-card {
+  background: var(--bg-card, #ffffff);
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+.modal-instruction {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0 0 4px 0;
+}
+
+.reg-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.reg-input-group label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.reg-input-group input,
+.reg-input-group select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #eee);
+  font-size: 0.85rem;
+  background: var(--bg-card, #fff);
+  color: var(--text-primary);
+}
+
+.file-upload-box {
+  border: 2px dashed var(--border-color, #ccc);
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.01);
+}
+
+.file-upload-box input {
+  font-size: 0.75rem;
+  width: 100%;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color, #eee);
+  display: flex;
+  gap: 10px;
+}
+
+.modal-submit-btn {
+  flex: 1;
+  background-color: var(--accent-color, #b8543a);
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.modal-cancel-btn {
+  flex: 1;
+  background-color: var(--struct-secondary, #6b7280);
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
