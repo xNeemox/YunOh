@@ -27,4 +27,4 @@ dist-ssr
 .env.local
 
 # Tools
-graphify-out
+graphify-out/
