@@ -53,9 +53,9 @@ export default function BusinessProfileView({ business, onBack }) {
 
         {/* Floating Logo Overlay */}
         <div className="bp-logo-wrapper">
-          {business.logo_url ? (
+          {business.business_profile_image ? (
             <img
-              src={business.logo_url}
+              src={business.business_profile_image}
               alt={`${business.name} logo`}
               className="bp-logo-img"
             />

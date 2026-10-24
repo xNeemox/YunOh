@@ -44,7 +44,7 @@ export default function HomeView({
       distance: "1.2 km",
       imageColor: "#B8543A",
       promo: "10% off on Pancit Batil Patong",
-      address: "Centro 1, Delfin Albano, Isabela",
+      address: "Centro 1, Bayombong, Nueva Vizcaya",
       open_time: "08:00",
       close_time: "21:00",
       logo_url: "",
@@ -61,7 +61,7 @@ export default function HomeView({
       distance: "2.5 km",
       imageColor: "#D97706",
       promo: "Buy 1 Take 1 Cold Brew",
-      address: "Magsaysay, Delfin Albano, Isabela",
+      address: "Magsaysay, Bayombong, Nueva Vizcaya",
       open_time: "09:00",
       close_time: "22:00",
       logo_url: "",
@@ -71,14 +71,14 @@ export default function HomeView({
     },
     {
       id: 3,
-      name: "Tuguegarao Grill & BBQ",
+      name: "Bayombong Grill & BBQ",
       category: "Grill / Casual",
       rating: 4.7,
       reviews: 210,
       distance: "3.1 km",
       imageColor: "#78645E",
       promo: "Free iced tea for students",
-      address: "Rizal St, Delfin Albano, Isabela",
+      address: "Rizal St, Bayombong, Nueva Vizcaya",
       open_time: "10:00",
       close_time: "23:00",
       logo_url: "",
@@ -114,8 +114,8 @@ export default function HomeView({
       <div className="welcome-banner">
         <h3>Discover Local Flavors 🍜</h3>
         <p className="home-subtitle-muted">
-          Find the best dining spots and digital promos around you in Delfin
-          Albano.
+          Find the best dining spots and digital promos around you in Bayombong,
+          Nueva Vizcaya.
         </p>
 
         <div className="search-bar-container">
@@ -163,10 +163,16 @@ export default function HomeView({
               >
                 <div
                   className="card-img-placeholder"
-                  style={{
-                    backgroundColor: spot.imageColor || "var(--accent-color)",
-                  }}
+                  // style={{
+                  //   backgroundColor: spot.imageColor || "var(--accent-color)",
+                  // }}
                 >
+                  <img
+                    src={spot.cover_image_url}
+                    alt={`${spot.name} cover`}
+                    className="cover-img"
+                  />
+
                   {spot.promo && (
                     <span className="promo-badge">
                       <Sparkles size={12} /> {spot.promo}
@@ -182,9 +188,11 @@ export default function HomeView({
                   >
                     <Heart
                       size={16}
-                      fill={isFavorited ? "var(--struct-secondary)" : "none"}
+                      fill={isFavorited ? "var(--heart-color" : "none"}
                       color={
-                        isFavorited ? "var(--struct-secondary)" : "#FFFFFF"
+                        isFavorited
+                          ? "var(--heart-outline-color)"
+                          : "var(--heart-outline-color)"
                       }
                     />
                   </button>
@@ -205,9 +213,9 @@ export default function HomeView({
                           spot.imageColor || "var(--struct-secondary)",
                       }}
                     >
-                      {spot.logo_url ? (
+                      {spot.business_profile_image ? (
                         <img
-                          src={spot.logo_url}
+                          src={spot.business_profile_image}
                           alt={spot.name}
                           className="merchant-avatar-img"
                         />

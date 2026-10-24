@@ -7,6 +7,8 @@
   --text-secondary: #78645e;
   --card-bg: #ffffff;
   --border-color: #e6d5c3;
+  --heart-outline-color: #ffffff;
+  --heart-color: red;
 }
 
 [data-theme="dark"] {
@@ -19,6 +21,8 @@
   --border-color: #3f3530;
   --bg-card: #2a2421;
   --bg-input: #2a2421;
+  --heart-outline-color: #ffffff;
+  --heart-color: #ffffff;
 }
 
 body {

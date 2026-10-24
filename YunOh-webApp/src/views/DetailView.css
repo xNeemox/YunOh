@@ -68,12 +68,12 @@
 
 .status-badge.open {
   background-color: rgba(16, 185, 129, 0.1);
-  color: #10B981;
+  color: #10b981;
 }
 
 .status-badge.closed {
   background-color: rgba(220, 38, 38, 0.1);
-  color: #EF4444;
+  color: #ef4444;
 }
 
 .detail-info-grid {
@@ -113,7 +113,7 @@
 
 .map-redirect-btn:hover {
   background-color: var(--struct-secondary);
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 /* Promo Section */
@@ -144,7 +144,7 @@
 
 .claim-voucher-btn {
   background-color: var(--struct-secondary);
-  color: #FFFFFF;
+  color: #ffffff;
   border: none;
   padding: 8px;
   border-radius: 8px;
@@ -156,4 +156,269 @@
 
 .claim-voucher-btn:hover {
   opacity: 0.9;
+}
+
+/* --- Header Avatar & Title Alignment --- */
+.detail-title-row.align-center {
+  align-items: center;
+}
+
+.detail-merchant-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 2px solid var(--accent-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.detail-merchant-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-merchant-avatar-letter {
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.detail-title-wrap {
+  flex: 1;
+  margin-left: 10px;
+}
+
+.detail-name.compact {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.detail-rating-badge {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* --- Status & Follow Button Row --- */
+.detail-status-follow-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.follow-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--accent-color);
+  background-color: var(--accent-color);
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.follow-toggle-btn.following {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-color, #ccc);
+}
+
+.follow-toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Voucher Claimed & Error States --- */
+.promo-section-spaced {
+  margin-top: 8px;
+}
+
+.voucher-error-msg {
+  font-size: 0.8rem;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.voucher-claimed-box {
+  background-color: rgba(16, 185, 129, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #10b981;
+  text-align: center;
+}
+
+.voucher-claimed-title {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.voucher-claimed-code {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text-primary);
+  margin: 4px 0;
+}
+
+.voucher-claimed-hint {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+/* --- Interactive Rating & Reviews Section --- */
+.reviews-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color, #eee);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reviews-section h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.review-form-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color, #eee);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.star-rating-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.star-rating-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.star-select-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: transform 0.15s ease;
+}
+
+.star-select-btn:hover {
+  transform: scale(1.15);
+}
+
+.review-textarea {
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #ddd);
+  background-color: var(--card-bg, #fff);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.review-textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.leave-review-btn {
+  background-color: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.leave-review-btn:hover {
+  opacity: 0.9;
+}
+
+.leave-review-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reviews-empty-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.review-item-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color, #eee);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.review-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.review-author {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.review-stars-display {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.review-comment-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.4;
 }
