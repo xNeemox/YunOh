@@ -1,0 +1,32 @@
+.follow-container {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2.5rem;
+}
+
+.follow-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: none;
+  background-color: var(--accent-color, #b8543a);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.follow-btn.following {
+  background-color: transparent;
+  border: 1px solid var(--accent-color, #b8543a);
+  color: var(--accent-color, #b8543a);
+}
+
+.follow-btn:hover {
+  opacity: 0.9;
+}

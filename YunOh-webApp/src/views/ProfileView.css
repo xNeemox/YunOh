@@ -308,3 +308,338 @@
   justify-content: center;
   box-shadow: 0 4px 10px rgba(184, 84, 58, 0.3);
 }
+
+/* Mode Switcher */
+.mode-switcher-container {
+  display: flex;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 4px;
+  border-radius: 12px;
+  gap: 4px;
+  margin-top: 10px;
+}
+.mode-tab-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background-color: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+.mode-tab-btn.active {
+  background-color: var(--bg-card, #ffffff);
+  color: var(--accent-color, #b8543a);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* User Info Card overrides */
+.profile-user-info-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0;
+  background: var(--bg-card, #ffffff);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #eee);
+}
+.profile-avatar-wrapper {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background-color: var(--accent-color, #b8543a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.profile-info-text-wrap {
+  overflow: hidden;
+  flex: 1;
+}
+.profile-signed-in-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.profile-email-text {
+  margin: 2px 0 0 0;
+  word-break: break-all;
+  font-size: 0.9rem;
+}
+
+/* Consumer Mode Stats */
+.consumer-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat-box-card {
+  background: var(--bg-card, #ffffff);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color, #eee);
+  text-align: center;
+}
+.stat-icon-margin {
+  margin-bottom: 4px;
+}
+.stat-box-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.stat-box-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* Settings-like Activity Hub */
+.settings-activity-hub {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #eee);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.settings-hub-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, #eee);
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.settings-row-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color, #eee);
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+.settings-row-item.active-row {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+.settings-row-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-row-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.settings-row-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.settings-row-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.chevron-icon {
+  color: var(--text-secondary);
+  transition: transform 0.2s;
+}
+.chevron-icon.rotated {
+  transform: rotate(90deg);
+}
+
+/* Drawers inside Settings Hub */
+.settings-drawer-content {
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.01);
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+.drawer-loading-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+.drawer-vouchers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.drawer-voucher-item {
+  padding: 8px;
+  border: 1px solid var(--accent-color, #b8543a);
+  border-radius: 6px;
+  background: var(--bg-card, #fff);
+}
+.drawer-voucher-biz {
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--accent-color, #b8543a);
+}
+.drawer-voucher-promo {
+  font-size: 0.8rem;
+  margin: 2px 0;
+}
+.drawer-voucher-pill {
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.05);
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.drawer-review-item-title {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.drawer-review-item-body {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+.favorites-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.favorite-spot-row {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Business Mode Dashboard */
+.merchant-dashboard-container {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--accent-color, #b8543a);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.merchant-dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  margin: 0 0 12px 0;
+  color: var(--accent-color, #b8543a);
+}
+.merchant-empty-wrapper {
+  text-align: center;
+  padding: 20px 0;
+}
+.merchant-empty-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.merchant-biz-name {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.merchant-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.merchant-stat-box {
+  background: rgba(0, 0, 0, 0.03);
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+}
+.merchant-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+.merchant-stat-val-row {
+  font-size: 0.95rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.merchant-asset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.asset-form-heading {
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+.update-status-msg {
+  font-size: 0.75rem;
+}
+.error-text {
+  color: #ef4444;
+}
+.success-text {
+  color: #10b981;
+}
+.asset-input-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.asset-text-input {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #eee);
+  font-size: 0.85rem;
+}
+
+/* Utility Helpers */
+.btn-pad-custom {
+  padding: 10px 20px;
+}
+.btn-secondary-custom {
+  padding: 10px 20px;
+  background-color: var(--struct-secondary, #6b7280);
+}
+.btn-sm-text {
+  font-size: 0.85rem;
+}
+.btn-mt-custom {
+  padding: 8px;
+  margin-top: 4px;
+}
+.btn-full-width {
+  width: 100%;
+}
+.profile-subtitle-muted {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 4px 0 12px 0;
+}
+.profile-logged-out-card {
+  text-align: center;
+  padding: 30px 20px;
+  background: var(--bg-card, #ffffff);
+  border-radius: 16px;
+  border: 1px solid var(--border-color, #eee);
+}
+.logged-out-icon {
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+.logged-out-title {
+  margin: 0 0 6px 0;
+}
+.logged-out-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.logged-out-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}

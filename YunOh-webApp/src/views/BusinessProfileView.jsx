@@ -8,6 +8,7 @@ import {
   BookOpen,
   Sparkles,
 } from "lucide-react";
+import FollowButton from "../components/FollowButton";
 import "./BusinessProfileView.css";
 
 export default function BusinessProfileView({ business, onBack }) {
@@ -70,22 +71,45 @@ export default function BusinessProfileView({ business, onBack }) {
       <div className="bp-header-content">
         <div className="bp-title-row">
           <h2 className="bp-name">{business.name}</h2>
-          <span className="spot-rating">
+          <span
+            className="spot-rating"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+            }}
+          >
             <Star
               size={16}
               fill="var(--accent-color)"
               color="var(--accent-color)"
             />
-            {business.rating || 4.8} ({business.reviews || 50}+ reviews)
+            {business.rating || 4.8} ({business.reviews || 50})
           </span>
         </div>
 
-        <p className="bp-category">{business.category || "Local Delicacy"}</p>
+        {/* Category and Follow Button Row */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            margin: "4px 0 8px 0",
+          }}
+        >
+          <p className="bp-category" style={{ margin: 0 }}>
+            {business.category || "Local Delicacy"}
+          </p>
+        </div>
 
         <div className="bp-meta-row">
           <MapPin size={16} color="var(--struct-secondary)" />
           <span>{business.address || "Centro, Delfin Albano, Isabela"}</span>
         </div>
+
+        <FollowButton initialFollowState={false} initialCount={24} />
 
         {business.promo && (
           <div className="bp-promo-banner">
