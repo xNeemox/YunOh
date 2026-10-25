@@ -30,10 +30,20 @@
 .detail-banner-placeholder {
   height: 160px;
   position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 14px;
+}
+
+.detail-banner-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.promo-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
 }
 
 .detail-body {
@@ -53,6 +63,7 @@
   margin: 0;
   font-size: 1.25rem;
   font-weight: 800;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 
@@ -421,4 +432,93 @@
   color: var(--text-secondary);
   margin: 0;
   line-height: 1.4;
+}
+
+/* --- Banner Image & Multi-Category Badges --- */
+.detail-banner-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.detail-banner-badges {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 80%;
+}
+
+.detail-category-more-badge {
+  background-color: rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.detail-banner-placeholder .fav-toggle-btn {
+  position: relative;
+  z-index: 2;
+}
+
+/* --- Business Description --- */
+.detail-description-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 4px 0 0 0;
+}
+
+/* --- Already Reviewed Notice & Delete Review Button --- */
+.already-reviewed-box {
+  background-color: var(--bg-primary);
+  border: 1px dashed var(--border-color, #ccc);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.review-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.delete-review-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.delete-review-btn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.delete-review-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

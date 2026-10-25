@@ -150,6 +150,7 @@
 }
 
 .spot-distance {
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -247,4 +248,109 @@
   border-radius: 6px;
   object-fit: cover;
   overflow: hidden;
+}
+
+/* --- Dynamic Barangay Filter Bar --- */
+.barangay-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 0 2px;
+}
+
+.barangay-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.barangay-select {
+  flex: 1;
+  max-width: 210px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #ddd);
+  background-color: var(--card-bg, #ffffff);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.barangay-select:focus {
+  border-color: var(--accent-color);
+}
+
+/* --- Dynamic Open / Closed Status Pill on Card --- */
+.home-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.home-status-pill.open {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.home-status-pill.closed {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+/* --- Dynamic Multi-Category & Status Meta Row --- */
+.spot-meta-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.category-tags-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.category-more-badge {
+  background-color: var(--struct-secondary);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+/* --- Dynamic Barangay & Distance Row --- */
+.spot-location-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color, rgba(0, 0, 0, 0.08));
+}
+
+.barangay-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-secondary);
 }

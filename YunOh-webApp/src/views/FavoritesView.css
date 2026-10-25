@@ -4,3 +4,6 @@
   flex-direction: column;
   gap: 16px;
 }
+.fav-toggle-btn {
+  background-color: #ffffff4f;
+}

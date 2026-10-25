@@ -86,7 +86,9 @@ export default function BusinessProfileView({ business, onBack }) {
               fill="var(--accent-color)"
               color="var(--accent-color)"
             />
-            {business.rating || 4.8} ({business.reviews || 50})
+            {Array.isArray(business.reviews)
+              ? business.reviews.length
+              : business.reviews || 50}
           </span>
         </div>
 

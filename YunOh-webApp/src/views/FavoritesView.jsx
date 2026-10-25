@@ -63,16 +63,18 @@ export default function FavoritesView({
                 onClick={() => onSelectRestaurant(spot)} // Triggers DetailView on card click
                 style={{ cursor: "pointer" }}
               >
-                <div
-                  className="card-img-placeholder"
-                  style={{ backgroundColor: spot.imageColor }}
-                >
+                <div className="card-img-placeholder">
+                  <img
+                    src={spot.cover_image_url}
+                    alt={`${spot.name} cover`}
+                    className="cover-img"
+                  />
                   <span className="promo-badge">
                     <Sparkles size={12} /> {spot.promo}
                   </span>
                   {/* Favorite Toggle Button */}
                   <button
-                    className="fav-toggle-btn active"
+                    className={`fav-toggle-btn ${isFavorited ? "active" : ""}`}
                     onClick={(e) => {
                       e.stopPropagation(); // Prevents card click when tapping the heart icon
                       toggleFavorite(spot);
@@ -81,8 +83,10 @@ export default function FavoritesView({
                   >
                     <Heart
                       size={16}
-                      fill="var(--struct-secondary)"
-                      color="var(--struct-secondary)"
+                      fill={isFavorited ? "var(--heart-color)" : "none"}
+                      color={
+                        isFavorited ? "var(--heart-outline-color)" : "#FFFFFF"
+                      }
                     />
                   </button>
                 </div>
