@@ -129,3 +129,219 @@
   font-size: 0.85rem;
   cursor: pointer;
 }
+
+/* --- Dedicated Business Registration Page Layout --- */
+.biz-reg-page {
+  padding: 4px 2px 28px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.biz-reg-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  width: fit-content;
+}
+
+.biz-reg-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2dcd5);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.biz-reg-header h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+}
+
+.biz-reg-header p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.biz-reg-section-title {
+  margin: 4px 0 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-color, #e2dcd5);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--accent-color, #a8653b);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.biz-reg-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* --- Multi-Category Selectable Chips --- */
+.biz-reg-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.biz-reg-category-chip {
+  padding: 6px 11px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color, #d6d0c8);
+  background-color: var(--bg-primary, #faf6f0);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.biz-reg-category-chip.selected {
+  background-color: var(--accent-color, #a8653b);
+  border-color: var(--accent-color, #a8653b);
+  color: #ffffff;
+}
+
+/* --- GPS Coordinate Button --- */
+.biz-reg-gps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-color, #a8653b);
+  background-color: rgba(168, 101, 59, 0.08);
+  color: var(--accent-color, #a8653b);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+/* --- Credentials Requirements Box & File Upload Previews --- */
+.biz-reg-credentials-guide {
+  background-color: rgba(217, 119, 6, 0.07);
+  border: 1px solid rgba(168, 101, 59, 0.3);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.76rem;
+  color: var(--text-primary);
+}
+
+.biz-reg-credentials-guide ul {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+  color: var(--text-secondary);
+}
+
+.biz-reg-credentials-guide li {
+  margin-bottom: 2px;
+}
+
+.biz-reg-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1.5px dashed var(--accent-color, #a8653b);
+  background-color: var(--bg-primary, #faf6f0);
+  color: var(--accent-color, #a8653b);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.biz-reg-hidden-file {
+  display: none;
+}
+
+.biz-reg-preview-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.biz-reg-preview-item {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #ddd);
+  background-color: #e5e0d8;
+}
+
+.biz-reg-preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.biz-reg-remove-file-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border: none;
+  font-size: 0.65rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.biz-reg-count-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.biz-reg-count-badge.valid {
+  color: #10b981;
+}
+
+.biz-reg-count-badge.invalid {
+  color: #ef4444;
+}
+
+.biz-reg-alert {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.biz-reg-alert.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}

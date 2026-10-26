@@ -25,6 +25,7 @@ export default function App() {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedBusinessProfile, setSelectedBusinessProfile] = useState(null);
 
+  // Full-page Business Registration view state
   const [isBusinessRegOpen, setIsBusinessRegOpen] = useState(false);
 
   // Helper function to fetch role from profiles table
@@ -38,12 +39,11 @@ export default function App() {
     if (!error && data) {
       setUserRole(data.role);
     } else {
-      setUserRole("consumer"); // Fallback default
+      setUserRole("consumer");
     }
   };
 
   useEffect(() => {
-    // Check active session on initial load
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user?.id) {
@@ -51,7 +51,6 @@ export default function App() {
       }
     });
 
-    // Listen for auth state changes (login, logout)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -94,15 +93,16 @@ export default function App() {
     setActiveTab(tab);
     setSelectedRestaurant(null);
     setSelectedBusinessProfile(null);
+    setIsBusinessRegOpen(false);
   };
 
-  // <--- NEW: Dedicated sign-out handler that resets navigation back to Home
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
     setUserRole(null);
     setActiveTab("home");
     setAuthViewMode("login");
+    setIsBusinessRegOpen(false);
   };
 
   return (
@@ -147,6 +147,20 @@ export default function App() {
                 Sign Out Admin
               </button>
             </div>
+          ) : isBusinessRegOpen ? (
+            /* --- DEDICATED BUSINESS REGISTRATION PAGE --- */
+            <BusinessRegistrationModal
+              isOpen={isBusinessRegOpen}
+              session={session}
+              onClose={() => setIsBusinessRegOpen(false)}
+              onSubmitSuccess={() => {
+                if (session?.user?.id) {
+                  fetchUserRole(session.user.id);
+                }
+                setIsBusinessRegOpen(false);
+                setActiveTab("profile");
+              }}
+            />
           ) : selectedBusinessProfile ? (
             <BusinessProfileView
               business={selectedBusinessProfile}
@@ -200,7 +214,7 @@ export default function App() {
                   session={session}
                   setSession={setSession}
                   userRole={userRole}
-                  onSignOut={handleSignOut} // <--- Pass down sign out handler
+                  onSignOut={handleSignOut}
                   onNavigateToLogin={() => setAuthViewMode("login")}
                   onNavigateToRegister={() => setAuthViewMode("register")}
                   onOpenBusinessRegistration={() => setIsBusinessRegOpen(true)}
@@ -209,14 +223,6 @@ export default function App() {
             </>
           )}
         </main>
-
-        <BusinessRegistrationModal
-          isOpen={isBusinessRegOpen}
-          onClose={() => setIsBusinessRegOpen(false)}
-          onSubmitSuccess={(formData) => {
-            console.log("Registered business data:", formData);
-          }}
-        />
 
         {session && (
           <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />

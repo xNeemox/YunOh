@@ -537,7 +537,7 @@ export default function ProfileView({
               >
                 <div className="profile-stat-label-row">
                   <Star size={15} color="var(--accent-color)" />
-                  <span>Ratings</span>
+                  <span>Food Ratings</span>
                 </div>
                 <div className="profile-stat-number">
                   {myDishRatings.length}
@@ -891,7 +891,7 @@ export default function ProfileView({
               <div className="merchant-manager-card">
                 <h5 className="merchant-manager-title">
                   <span>
-                    <Utensils size={15} /> Digital Menu Manager (
+                    <Utensils size={15} /> Menu Manager (
                     {merchantMenuItems.length})
                   </span>
                 </h5>
