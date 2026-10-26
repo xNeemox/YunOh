@@ -26,10 +26,39 @@ export default function RegisterView({ switchToLogin }) {
     setErrorMessage("");
     setSuccessMessage("");
 
-    // 1. Sign up the user in Supabase Auth
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanUsername) {
+      setErrorMessage("Please enter a valid username.");
+      setLoading(false);
+      return;
+    }
+
+    // 1. Pre-check if username is already taken in public.profiles
+    const { data: existingUser } = await supabase
+      .from("profiles")
+      .select("id")
+      .ilike("username", cleanUsername)
+      .maybeSingle();
+
+    if (existingUser) {
+      setErrorMessage("That username is already taken. Please choose another.");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Sign up user in Supabase Auth and pass metadata for the DB trigger
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
+      options: {
+        data: {
+          username: cleanUsername,
+          full_name: cleanUsername,
+          role: "consumer",
+        },
+      },
     });
 
     if (authError) {
@@ -40,25 +69,33 @@ export default function RegisterView({ switchToLogin }) {
 
     const userId = authData.user?.id;
 
-    if (userId) {
-      // 2. Insert the corresponding record into your public.profiles table
-      const { error: profileError } = await supabase.from("profiles").insert([
-        {
-          id: userId,
-          username: username,
-          email: email,
-          full_name: username, // Using username as default full_name
-          role: "consumer", // Default role as per your table schema
-        },
-      ]);
+    // 3. If an active session exists immediately, safely upsert profile row
+    // (If email confirmation is enabled, the handle_new_user DB trigger already created the row!)
+    if (userId && authData.session) {
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        [
+          {
+            id: userId,
+            username: cleanUsername,
+            email: cleanEmail,
+            full_name: cleanUsername,
+            role: "consumer",
+          },
+        ],
+        { onConflict: "id" },
+      );
 
       if (profileError) {
         setErrorMessage(profileError.message);
-      } else {
-        setSuccessMessage("Registration successful! You can now sign in.");
+        setLoading(false);
+        return;
       }
     }
 
+    setSuccessMessage("Registration successful! You can now sign in.");
+    setUsername("");
+    setEmail("");
+    setPassword("");
     setLoading(false);
   };
 

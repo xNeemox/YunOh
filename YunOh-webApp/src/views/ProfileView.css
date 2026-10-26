@@ -2,7 +2,6 @@
 .profile-view {
   display: flex;
   flex-direction: column;
-  gap: 16px;
 }
 
 .auth-container {
@@ -154,11 +153,6 @@
   box-shadow: 0 4px 10px rgba(184, 84, 58, 0.3);
 }
 /* --- Profile & Auth View Styles --- */
-.profile-view {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
 
 .auth-container {
   background-color: var(--card-bg);
@@ -642,4 +636,592 @@
   display: flex;
   gap: 10px;
   justify-content: center;
+}
+
+/* --- Logged Out State --- */
+.profile-welcome-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 4px 0 16px 0;
+}
+
+.profile-logged-out-card {
+  text-align: center;
+  padding: 30px 20px;
+  background: var(--bg-card, #ffffff);
+  border-radius: 16px;
+  border: 1px solid var(--border-color, #eee);
+}
+
+.profile-logged-out-icon {
+  opacity: 0.4;
+  margin-bottom: 12px;
+}
+
+.profile-logged-out-title {
+  margin: 0 0 6px 0;
+  color: var(--text-primary);
+}
+
+.profile-logged-out-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.profile-logged-out-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.profile-auth-btn {
+  padding: 10px 20px;
+}
+
+.profile-auth-btn.secondary {
+  background-color: var(--struct-secondary);
+}
+
+/* --- Centered Profile Header (Matching Reference Design) --- */
+.profile-centered-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px 0 10px 0;
+}
+
+.profile-avatar-circle-lg {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background-color: #d6d3d1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 10px;
+  border: 2px solid var(--border-color, #e5e0d8);
+}
+
+.profile-avatar-circle-lg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-username-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-location-subtitle {
+  margin: 3px 0 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* --- Sliding Underline Mode Switcher (User | Business) --- */
+.profile-underline-tabs {
+  position: relative;
+  display: flex;
+  border-bottom: 1.5px solid var(--border-color, #e2dcd5);
+  margin: 12px 0 18px 0;
+}
+
+.profile-underline-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+
+.profile-underline-tab.active {
+  color: var(--accent-color, #a8653b);
+  font-weight: 700;
+}
+
+.profile-tab-indicator {
+  position: absolute;
+  bottom: -1.5px;
+  left: 0;
+  width: 50%;
+  height: 3px;
+  background-color: var(--accent-color, #a8653b);
+  border-radius: 3px 3px 0 0;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.profile-tab-indicator.right {
+  transform: translateX(100%);
+}
+
+/* --- Warm Tinted Container (User Community & Merchant Analytics) --- */
+.profile-tinted-section {
+  background-color: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(168, 101, 59, 0.35);
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 18px;
+}
+
+.profile-tinted-heading {
+  margin: 0 0 12px 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-tinted-heading.centered {
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.profile-stats-grid-2x2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.profile-stat-white-box {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e6e1da);
+  border-radius: 12px;
+  padding: 12px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.profile-stat-white-box:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+}
+
+.profile-stat-white-box.active-box {
+  border-color: var(--accent-color, #a8653b);
+  box-shadow: 0 0 0 1px var(--accent-color, #a8653b);
+}
+
+.profile-stat-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.profile-stat-number {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-stat-paren-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* --- Expandable Detail Drawer Inside Community / Account --- */
+.profile-drawer-panel {
+  margin-top: 12px;
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e6e1da);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-color);
+  border-bottom: 1px solid var(--border-color, #eee);
+  padding-bottom: 6px;
+}
+
+.profile-drawer-empty {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 0;
+  text-align: center;
+  padding: 6px 0;
+}
+
+.profile-drawer-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: var(--bg-primary, #faf6f0);
+  border: 1px solid var(--border-color, #eee);
+  font-size: 0.8rem;
+}
+
+.profile-drawer-item-title {
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.profile-drawer-item-sub {
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.profile-voucher-code-pill {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background-color: rgba(168, 101, 59, 0.12);
+  color: var(--accent-color);
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+}
+
+/* --- Account & Business Community Grouped List Card --- */
+.profile-section-heading {
+  margin: 0 0 8px 2px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-list-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2dcd5);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.profile-list-card-header {
+  padding: 10px 16px;
+  background-color: rgba(217, 119, 6, 0.06);
+  border-bottom: 1px solid var(--border-color, #e2dcd5);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.profile-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border-color, #eee);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.profile-list-row:last-child {
+  border-bottom: none;
+}
+
+.profile-list-row:hover {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+.profile-list-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.profile-list-drawer {
+  padding: 12px 16px;
+  background-color: var(--bg-primary, #faf6f0);
+  border-bottom: 1px solid var(--border-color, #eee);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- Merchant Tools: Storefront, Digital Menu CRUD & Danger Zone --- */
+.merchant-manager-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2dcd5);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.merchant-manager-title {
+  margin: 0 0 10px 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.merchant-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.merchant-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.merchant-input-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.merchant-text-input,
+.merchant-select-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #ddd);
+  background-color: var(--bg-primary, #faf6f0);
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  box-sizing: border-box;
+}
+
+.merchant-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.merchant-status-msg {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.merchant-status-msg.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.merchant-status-msg.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.merchant-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.merchant-menu-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #eee);
+  background-color: var(--bg-primary, #faf6f0);
+}
+
+.merchant-menu-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.merchant-menu-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #e5e0d8;
+}
+
+.merchant-menu-text {
+  overflow: hidden;
+}
+
+.merchant-menu-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.merchant-menu-meta {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.merchant-icon-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+/* --- Unregister Business Danger Box --- */
+.unregister-danger-card {
+  background-color: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.unregister-danger-title {
+  margin: 0 0 4px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unregister-danger-desc {
+  margin: 0 0 10px 0;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.unregister-btn-outline {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #ef4444;
+  background: transparent;
+  color: #ef4444;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unregister-confirm-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.unregister-confirm-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.unregister-cancel-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #ccc);
+  background-color: var(--bg-card, #ffffff);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chevron-rotated {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
+}
+
+/* --- File Upload Controls & Previews --- */
+.merchant-file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.merchant-file-label-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--accent-color, #a8653b);
+  background-color: var(--bg-primary, #faf6f0);
+  color: var(--accent-color, #a8653b);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  flex: 1;
+}
+
+.merchant-file-label-btn:hover {
+  background-color: rgba(168, 101, 59, 0.08);
+}
+
+.merchant-file-input-hidden {
+  display: none;
+}
+
+.merchant-upload-preview-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-color, #ddd);
+  flex-shrink: 0;
+  background-color: #e5e0d8;
+}
+
+.merchant-upload-preview-banner {
+  width: 72px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--border-color, #ddd);
+  flex-shrink: 0;
+  background-color: #e5e0d8;
 }
