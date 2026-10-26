@@ -8,7 +8,7 @@
   --card-bg: #ffffff;
   --border-color: #e6d5c3;
   --heart-outline-color: #ffffff;
-  --heart-color: red;
+  --heart-color: rgb(255, 0, 0);
 }
 
 [data-theme="dark"] {

@@ -33,7 +33,7 @@
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  border: 3px solid var(--bg-card, #ffffff);
+  border: 3px solid #ffffff;
   background-color: var(--bg-card, #ffffff);
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
