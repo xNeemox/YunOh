@@ -5,7 +5,7 @@
   gap: 16px;
 }
 .fav-toggle-btn {
-  background-color: #ffffff4f;
+  background-color: var(--heart-background-color);
 }
 
 /* --- Favorites Banner & Empty State --- */
