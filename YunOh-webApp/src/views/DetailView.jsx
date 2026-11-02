@@ -4,7 +4,7 @@ import {
   Star,
   MapPin,
   Clock,
-  Navigation,
+  Send,
   Tag,
   Heart,
   Sparkles,
@@ -13,12 +13,38 @@ import {
   UserPlus,
   UserCheck,
   Trash2,
+  Utensils,
+  X,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./DetailView.css";
 
 // Default fallback coordinates: Bayombong, Nueva Vizcaya Town Center
 const BAYOMBONG_CENTER = { lat: 16.4815, lng: 121.1497 };
+
+// Fallback sample menu items for non-UUID mock cards
+const FALLBACK_MENU_ITEMS = [
+  {
+    id: "mock-dish-1",
+    name: "Special Pancit Batil Patong",
+    description:
+      "Authentic miki noodles topped with seasoned beef, crispy chicharon, poached egg, and served with rich egg drop soup.",
+    price: 135.0,
+    special_tag: "Best Seller",
+    image_url:
+      "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=600&q=80",
+  },
+  {
+    id: "mock-dish-2",
+    name: "Sizzling Pork Sisig Platter",
+    description:
+      "Crispy chopped pork belly tossed in calamansi-chili dressing on a hot cast-iron plate.",
+    price: 180.0,
+    special_tag: "Special Offer",
+    image_url:
+      "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",
+  },
+];
 
 export default function DetailView({
   restaurant,
@@ -35,6 +61,19 @@ export default function DetailView({
   const isUuidBusiness =
     typeof restaurant.id === "string" && restaurant.id.length > 10;
 
+  // Primary Sliding Tab Navigation ('menu' | 'reviews' | 'promos')
+  const [activeNavTab, setActiveNavTab] = useState("menu");
+
+  // Secondary Special Tag Pill Filter ('All Menu' | 'Best Seller' | 'New Arrivals' | 'Special Offer')
+  const [selectedSpecialTag, setSelectedSpecialTag] = useState("All Menu");
+
+  // Menu Items & Dish Ratings State
+  const [menuItems, setMenuItems] = useState([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [dishRatingsMap, setDishRatingsMap] = useState({}); // { [menu_item_id]: [{ id, user_id, rating }] }
+  const [selectedDishModal, setSelectedDishModal] = useState(null);
+  const [ratingDishLoading, setRatingDishLoading] = useState(false);
+
   // User & Voucher state
   const [currentUser, setCurrentUser] = useState(null);
   const [claiming, setClaiming] = useState(false);
@@ -46,7 +85,7 @@ export default function DetailView({
   const [followerCount, setFollowerCount] = useState(0);
   const [followLoading, setFollowLoading] = useState(false);
 
-  // Interactive Rating & Reviews state (reviews table)
+  // Interactive Establishment Rating & Reviews state (reviews table) — Default 0!
   const [reviewsList, setReviewsList] = useState([]);
   const [userRating, setUserRating] = useState(0);
   const [userComment, setUserComment] = useState("");
@@ -58,7 +97,6 @@ export default function DetailView({
   const [userCoords, setUserCoords] = useState(BAYOMBONG_CENTER);
 
   useEffect(() => {
-    // Request user's real-time location for accurate distance
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -67,9 +105,7 @@ export default function DetailView({
             lng: pos.coords.longitude,
           });
         },
-        () => {
-          // Keep Bayombong center fallback if denied
-        },
+        () => {},
         { enableHighAccuracy: true, timeout: 5000 },
       );
     }
@@ -88,14 +124,17 @@ export default function DetailView({
         // 1. Log 1 visit per user per day into business_visits
         await logDailyVisit(restaurant.id, activeUser?.id || null);
 
-        // 2. Fetch total followers count for this business
+        // 2. Fetch total followers count
         fetchFollowerCount();
 
-        // 3. Load community reviews for this business
+        // 3. Fetch digital menu items & their ratings
+        fetchMenuAndRatings();
+
+        // 4. Load establishment community reviews
         fetchReviews();
 
         if (activeUser) {
-          // 4. Check if user already claimed a voucher for this business
+          // 5. Check if user already claimed a voucher
           const { data: voucherData } = await supabase
             .from("user_vouchers")
             .select("*")
@@ -107,7 +146,7 @@ export default function DetailView({
             setClaimedVoucher(voucherData);
           }
 
-          // 5. Check if user already follows this business
+          // 6. Check if user already follows this business
           const { data: followData } = await supabase
             .from("follows")
             .select("id")
@@ -117,11 +156,152 @@ export default function DetailView({
 
           setIsFollowing(Boolean(followData));
         }
+      } else {
+        setMenuItems(FALLBACK_MENU_ITEMS);
       }
     }
 
     loadDetailData();
   }, [restaurant.id, isUuidBusiness]);
+
+  // --- HELPER: Fetch Menu Items & Dish Ratings ---
+  const fetchMenuAndRatings = async () => {
+    setMenuLoading(true);
+    try {
+      const { data: items, error } = await supabase
+        .from("menu_items")
+        .select("*")
+        .eq("business_id", restaurant.id)
+        .order("created_at", { ascending: false });
+
+      if (!error && items) {
+        setMenuItems(items);
+
+        if (items.length > 0) {
+          const itemIds = items.map((i) => i.id);
+          const { data: ratingsData } = await supabase
+            .from("menu_item_ratings")
+            .select("id, menu_item_id, user_id, rating")
+            .in("menu_item_id", itemIds);
+
+          const grouped = {};
+          (ratingsData || []).forEach((r) => {
+            if (!grouped[r.menu_item_id]) grouped[r.menu_item_id] = [];
+            grouped[r.menu_item_id].push(r);
+          });
+          setDishRatingsMap(grouped);
+        } else {
+          setDishRatingsMap({});
+        }
+      }
+    } finally {
+      setMenuLoading(false);
+    }
+  };
+
+  // --- HELPER: Get Average Rating & User's Own Rating for a Menu Item ---
+  const getDishRatingStats = (dishId) => {
+    const list = dishRatingsMap[dishId] || [];
+    const count = list.length;
+    const myEntry = currentUser
+      ? list.find((r) => r.user_id === currentUser.id)
+      : null;
+    const myRating = myEntry ? Number(myEntry.rating) : 0;
+
+    if (count === 0) {
+      return { avgText: "New", count: 0, myRating };
+    }
+    const sum = list.reduce((acc, r) => acc + (Number(r.rating) || 0), 0);
+    return {
+      avgText: (sum / count).toFixed(1),
+      count,
+      myRating,
+    };
+  };
+
+  // --- HELPER: Rate or Undo Rating on a Menu Item (Tap same star to remove!) ---
+  const handleToggleDishStar = async (dish, starValue) => {
+    if (!currentUser) {
+      alert("Please sign in first to rate menu items!");
+      return;
+    }
+
+    const currentList = dishRatingsMap[dish.id] || [];
+    const existingEntry = currentList.find((r) => r.user_id === currentUser.id);
+    const isUndoingSameStar =
+      existingEntry && Number(existingEntry.rating) === starValue;
+
+    setRatingDishLoading(true);
+
+    // Demo fallback for non-UUID mock dishes
+    if (!isUuidBusiness) {
+      setDishRatingsMap((prev) => {
+        const list = prev[dish.id] || [];
+        const filtered = list.filter((r) => r.user_id !== currentUser.id);
+        return {
+          ...prev,
+          [dish.id]: isUndoingSameStar
+            ? filtered
+            : [
+                ...filtered,
+                { id: Date.now(), user_id: currentUser.id, rating: starValue },
+              ],
+        };
+      });
+      setRatingDishLoading(false);
+      return;
+    }
+
+    try {
+      if (isUndoingSameStar) {
+        // User tapped the exact same star rating again -> Remove their rating!
+        const { error } = await supabase
+          .from("menu_item_ratings")
+          .delete()
+          .eq("menu_item_id", dish.id)
+          .eq("user_id", currentUser.id);
+
+        if (!error) {
+          setDishRatingsMap((prev) => ({
+            ...prev,
+            [dish.id]: (prev[dish.id] || []).filter(
+              (r) => r.user_id !== currentUser.id,
+            ),
+          }));
+        }
+      } else {
+        // User tapped a new star rating (1-5) -> Upsert 1 rating per user per item
+        const { data, error } = await supabase
+          .from("menu_item_ratings")
+          .upsert(
+            [
+              {
+                menu_item_id: dish.id,
+                user_id: currentUser.id,
+                rating: starValue,
+              },
+            ],
+            { onConflict: "menu_item_id,user_id" },
+          )
+          .select()
+          .single();
+
+        if (!error && data) {
+          setDishRatingsMap((prev) => {
+            const filtered = (prev[dish.id] || []).filter(
+              (r) => r.user_id !== currentUser.id,
+            );
+            return {
+              ...prev,
+              [dish.id]: [...filtered, data],
+            };
+          });
+        }
+      }
+    } finally {
+      setRatingDishLoading(false);
+    }
+  };
 
   // --- HELPER: Log 1 visit per user per day (business_visits table) ---
   const logDailyVisit = async (businessId, userId) => {
@@ -131,7 +311,6 @@ export default function DetailView({
       const todayIso = todayStart.toISOString();
 
       if (userId) {
-        // Check if this logged-in user already visited this business today
         const { data: existingVisit } = await supabase
           .from("business_visits")
           .select("id")
@@ -149,7 +328,6 @@ export default function DetailView({
           ]);
         }
       } else {
-        // Guest user: restrict to 1 visit per day using sessionStorage/localStorage key
         const dateKey = todayStart.toISOString().split("T")[0];
         const storageKey = `yunoh_visit_${businessId}_${dateKey}`;
         if (!localStorage.getItem(storageKey)) {
@@ -163,7 +341,7 @@ export default function DetailView({
         }
       }
     } catch {
-      // Silently ignore analytics errors so UI never breaks
+      // Ignore analytics errors
     }
   };
 
@@ -267,7 +445,6 @@ export default function DetailView({
       return { avg: (sum / count).toFixed(1), countText: `(${count})` };
     }
 
-    // Fallback for static mock cards
     if (reviewsList.length > 0) {
       const count = reviewsList.length;
       const sum = reviewsList.reduce(
@@ -290,12 +467,10 @@ export default function DetailView({
   const formattedAddress = getFormattedAddress();
   const distanceText = getDynamicDistance();
 
-  // Check if current logged-in user already submitted a review for this business
   const existingUserReview = currentUser
     ? reviewsList.find((rev) => rev.user_id === currentUser.id)
     : null;
 
-  // Helper function to check if currently open using "HH:mm" text format
   const checkIsCurrentlyOpen = (openStr, closeStr) => {
     if (!openStr || !closeStr) return true;
 
@@ -316,24 +491,17 @@ export default function DetailView({
     restaurant.close_time,
   );
 
-  // Google Maps Redirection URL (uses exact coordinates or formatted address)
-  const mapSearchUrl =
-    restaurant.latitude && restaurant.longitude
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          `${restaurant.name} ${formattedAddress}`,
-        )}`
-      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          `${restaurant.name} ${formattedAddress}`,
-        )}`;
+  const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${restaurant.name} ${formattedAddress}`,
+  )}`;
 
-  // Handle Follow / Unfollow Toggle (follows table)
+  // Handle Follow / Unfollow Toggle
   const handleToggleFollow = async () => {
     if (!currentUser) {
       alert("Please sign in first to follow establishments!");
       return;
     }
 
-    // Fallback toggle for static mock cards during demo
     if (!isUuidBusiness) {
       setIsFollowing((prev) => !prev);
       setFollowerCount((prev) =>
@@ -370,7 +538,7 @@ export default function DetailView({
     setFollowLoading(false);
   };
 
-  // Handle Voucher Claiming (user_vouchers table)
+  // Handle Voucher Claiming
   const handleClaimVoucher = async () => {
     if (!currentUser) {
       alert("Please sign in from your Profile tab first to claim vouchers!");
@@ -385,7 +553,6 @@ export default function DetailView({
       .toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const promoText = restaurant.promo || "10% discount on total order";
 
-    // Demo fallback for static mock cards
     if (!isUuidBusiness) {
       setClaimedVoucher({
         voucher_code: randomCode,
@@ -422,7 +589,7 @@ export default function DetailView({
     setClaiming(false);
   };
 
-  // Handle Leaving a Review (1 per user limit)
+  // Handle Leaving an Establishment Review (1 per user limit)
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     if (!currentUser) {
@@ -438,7 +605,7 @@ export default function DetailView({
     }
 
     if (userRating < 1 || userRating > 5) {
-      setReviewError("Please select a star rating (1 to 5 stars) first.");
+      setReviewError("Please tap a star (1 to 5) to rate this establishment.");
       return;
     }
 
@@ -450,7 +617,6 @@ export default function DetailView({
     setSubmittingReview(true);
     setReviewError("");
 
-    // Demo fallback for static mock cards
     if (!isUuidBusiness) {
       const mockNewReview = {
         id: Date.now(),
@@ -485,7 +651,7 @@ export default function DetailView({
     setSubmittingReview(false);
   };
 
-  // Handle Removing Own Review
+  // Handle Removing Own Establishment Review
   const handleDeleteReview = async (reviewId) => {
     if (!currentUser) return;
 
@@ -511,6 +677,23 @@ export default function DetailView({
     }
     setDeletingReviewId(null);
   };
+
+  // --- DYNAMIC SPECIAL TAG PILLS (Only render tags that actually exist in menuItems) ---
+  const ORDERED_SPECIAL_TAGS = ["Best Seller", "New Arrivals", "Special Offer"];
+  const availableSpecialTags = [
+    "All Menu",
+    ...ORDERED_SPECIAL_TAGS.filter((tag) =>
+      menuItems.some((item) => item.special_tag === tag),
+    ),
+  ];
+
+  const filteredMenuItems =
+    selectedSpecialTag === "All Menu"
+      ? menuItems
+      : menuItems.filter((item) => item.special_tag === selectedSpecialTag);
+
+  const slidingTabIndex =
+    activeNavTab === "menu" ? 0 : activeNavTab === "reviews" ? 1 : 2;
 
   return (
     <div className="detail-view">
@@ -565,7 +748,7 @@ export default function DetailView({
 
         <div className="detail-body">
           <div className="detail-title-row align-center">
-            {/* Circular Merchant Profile Avatar before name */}
+            {/* Circular Merchant Profile Avatar */}
             <div
               onClick={() =>
                 onSelectBusinessProfile && onSelectBusinessProfile(restaurant)
@@ -636,14 +819,27 @@ export default function DetailView({
             <p className="detail-description-text">{restaurant.description}</p>
           )}
 
-          {/* Dynamic Info Grid (Structured Address, Distance, Hours) */}
+          {/* Dynamic Info Grid + Compact "See on map" Paper Airplane Button */}
           <div className="detail-info-grid">
-            <div className="info-row">
-              <MapPin size={16} color="var(--struct-secondary)" />
-              <span>
-                {formattedAddress} • <strong>{distanceText} away</strong>
-              </span>
+            <div className="detail-address-map-row">
+              <div className="info-row">
+                <MapPin size={16} color="var(--struct-secondary)" />
+                <span>
+                  {formattedAddress} • <strong>{distanceText} away</strong>
+                </span>
+              </div>
+
+              <a
+                href={mapSearchUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="compact-map-btn"
+                title="Open in Google Maps"
+              >
+                <Send size={12} /> See on map
+              </a>
             </div>
+
             <div className="info-row">
               <Clock size={16} color="var(--struct-secondary)" />
               <span>
@@ -654,180 +850,412 @@ export default function DetailView({
             </div>
           </div>
 
-          {/* Map Redirect Button */}
-          <a
-            href={mapSearchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="map-redirect-btn"
-          >
-            <Navigation size={16} /> View on Map & Get Directions
-          </a>
-
-          {/* Active Promo & Voucher Section */}
-          <div className="promo-section promo-section-spaced">
-            <h4>Digital Promo & Voucher 🎟️</h4>
-            <div className="promo-card">
-              <div className="promo-text">
-                <Tag size={16} color="var(--accent-color)" />
-                <span>
-                  {restaurant.promo ||
-                    "10% discount on total order for students!"}
-                </span>
-              </div>
-
-              {voucherError && (
-                <div className="voucher-error-msg">
-                  <AlertCircle size={14} /> <span>{voucherError}</span>
-                </div>
-              )}
-
-              {claimedVoucher ? (
-                <div className="voucher-claimed-box">
-                  <div className="voucher-claimed-title">
-                    <CheckCircle size={14} /> Voucher Claimed Successfully!
-                  </div>
-                  <div className="voucher-claimed-code">
-                    {claimedVoucher.voucher_code}
-                  </div>
-                  <div className="voucher-claimed-hint">
-                    Show this code at the cashier to redeem.
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className="claim-voucher-btn"
-                  onClick={handleClaimVoucher}
-                  disabled={claiming}
-                >
-                  {claiming ? "Claiming Voucher..." : "Claim Voucher Code"}
-                </button>
-              )}
-            </div>
+          {/* ================= PRIMARY SLIDING UNDERLINE NAVIGATION ================= */}
+          <div className="detail-sliding-tabs">
+            <button
+              type="button"
+              className={`detail-sliding-tab ${
+                activeNavTab === "menu" ? "active" : ""
+              }`}
+              onClick={() => setActiveNavTab("menu")}
+            >
+              Menu ({menuItems.length})
+            </button>
+            <button
+              type="button"
+              className={`detail-sliding-tab ${
+                activeNavTab === "reviews" ? "active" : ""
+              }`}
+              onClick={() => setActiveNavTab("reviews")}
+            >
+              Reviews ({reviewsList.length})
+            </button>
+            <button
+              type="button"
+              className={`detail-sliding-tab ${
+                activeNavTab === "promos" ? "active" : ""
+              }`}
+              onClick={() => setActiveNavTab("promos")}
+            >
+              Promos
+            </button>
+            <div
+              className={`detail-sliding-indicator tab-${slidingTabIndex}`}
+            />
           </div>
 
-          {/* Interactive Rating & Community Reviews Section */}
-          <div className="reviews-section">
-            <h4>Ratings & Community Reviews ⭐</h4>
-
-            {existingUserReview ? (
-              <div className="already-reviewed-box">
-                <CheckCircle size={15} color="#10b981" />
-                <span>
-                  You have already rated & reviewed this spot. Remove your
-                  review below if you wish to submit a new one.
-                </span>
+          {/* ================= TAB 1: DIGITAL MENU ================= */}
+          {activeNavTab === "menu" && (
+            <div className="detail-menu-section">
+              {/* Dynamic Special Tag Pill Navigation (Only renders tags that exist) */}
+              <div className="menu-tag-pills-row">
+                {availableSpecialTags.map((tagLabel) => (
+                  <button
+                    key={tagLabel}
+                    type="button"
+                    className={`menu-tag-pill ${
+                      selectedSpecialTag === tagLabel ? "active" : ""
+                    }`}
+                    onClick={() => setSelectedSpecialTag(tagLabel)}
+                  >
+                    {tagLabel}
+                  </button>
+                ))}
               </div>
-            ) : (
-              <form onSubmit={handleSubmitReview} className="review-form-card">
-                <div className="star-rating-input">
-                  <span className="star-rating-label">Your Rating:</span>
-                  {[1, 2, 3, 4, 5].map((starValue) => (
-                    <button
-                      key={starValue}
-                      type="button"
-                      onClick={() => setUserRating(starValue)}
-                      className="star-select-btn"
-                      aria-label={`Rate ${starValue} stars`}
-                    >
-                      <Star
-                        size={18}
-                        fill={
-                          starValue <= userRating
-                            ? "var(--accent-color)"
-                            : "none"
+
+              {menuLoading ? (
+                <p className="reviews-empty-text">Loading digital menu...</p>
+              ) : filteredMenuItems.length === 0 ? (
+                <p className="reviews-empty-text">
+                  No menu items posted for this category yet.
+                </p>
+              ) : (
+                <div className="detail-menu-grid">
+                  {filteredMenuItems.map((dish) => {
+                    const stats = getDishRatingStats(dish.id);
+                    return (
+                      <div
+                        key={dish.id}
+                        className="detail-menu-card"
+                        onClick={() => setSelectedDishModal(dish)}
+                      >
+                        <div className="detail-menu-img-wrap">
+                          {dish.image_url ? (
+                            <img
+                              src={dish.image_url}
+                              alt={dish.name}
+                              className="detail-menu-img"
+                            />
+                          ) : (
+                            <Utensils size={28} color="#a8a29e" />
+                          )}
+                          {dish.special_tag && dish.special_tag !== "None" && (
+                            <span className="detail-menu-tag-badge">
+                              {dish.special_tag}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="detail-menu-card-body">
+                          <h5 className="detail-menu-title">{dish.name}</h5>
+                          <div className="detail-menu-footer">
+                            <span className="detail-menu-price">
+                              ₱{Number(dish.price).toFixed(2)}
+                            </span>
+                            <span className="detail-menu-rating">
+                              <Star
+                                size={12}
+                                fill={
+                                  stats.count === 0
+                                    ? "none"
+                                    : "var(--accent-color)"
+                                }
+                                color="var(--accent-color)"
+                              />
+                              {stats.avgText}
+                              {stats.count > 0 ? ` (${stats.count})` : ""}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ================= TAB 2: ESTABLISHMENT REVIEWS ================= */}
+          {activeNavTab === "reviews" && (
+            <div className="reviews-section">
+              {existingUserReview ? (
+                <div className="already-reviewed-box">
+                  <CheckCircle size={15} color="#10b981" />
+                  <span>
+                    You have already rated & reviewed this spot. Remove your
+                    review below if you wish to submit a new one.
+                  </span>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleSubmitReview}
+                  className="review-form-card"
+                >
+                  <div className="star-rating-input">
+                    <span className="star-rating-label">
+                      Your Rating {userRating > 0 ? `(${userRating}★)` : ""}:
+                    </span>
+                    {[1, 2, 3, 4, 5].map((starValue) => (
+                      <button
+                        key={starValue}
+                        type="button"
+                        onClick={() =>
+                          // Tap same star value again to undo back to 0!
+                          setUserRating((prev) =>
+                            prev === starValue ? 0 : starValue,
+                          )
                         }
-                        color={
-                          starValue <= userRating
-                            ? "var(--accent-color)"
-                            : "var(--text-secondary)"
-                        }
-                      />
-                    </button>
-                  ))}
+                        className="star-select-btn"
+                        aria-label={`Rate ${starValue} stars`}
+                      >
+                        <Star
+                          size={18}
+                          fill={
+                            starValue <= userRating
+                              ? "var(--accent-color)"
+                              : "none"
+                          }
+                          color={
+                            starValue <= userRating
+                              ? "var(--accent-color)"
+                              : "var(--text-secondary)"
+                          }
+                        />
+                      </button>
+                    ))}
+                  </div>
+
+                  <textarea
+                    className="review-textarea"
+                    placeholder="Share your experience at this establishment..."
+                    value={userComment}
+                    onChange={(e) => setUserComment(e.target.value)}
+                  />
+
+                  {reviewError && (
+                    <div className="voucher-error-msg">
+                      <AlertCircle size={14} /> <span>{reviewError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="leave-review-btn"
+                    disabled={submittingReview}
+                  >
+                    {submittingReview ? "Posting Review..." : "Leave a Review"}
+                  </button>
+                </form>
+              )}
+
+              {/* Existing Establishment Reviews List */}
+              <div className="reviews-list">
+                {reviewsList.length === 0 ? (
+                  <p className="reviews-empty-text">
+                    No establishment reviews yet. Be the first to leave one!
+                  </p>
+                ) : (
+                  reviewsList.map((rev) => {
+                    const isOwnReview =
+                      currentUser && rev.user_id === currentUser.id;
+
+                    return (
+                      <div key={rev.id} className="review-item-card">
+                        <div className="review-item-header">
+                          <span className="review-author">
+                            @
+                            {rev.profiles?.username ||
+                              rev.profiles?.full_name ||
+                              "foodlover"}
+                          </span>
+
+                          <div className="review-header-right">
+                            <div className="review-stars-display">
+                              {[...Array(rev.rating || 5)].map((_, idx) => (
+                                <Star
+                                  key={idx}
+                                  size={12}
+                                  fill="var(--accent-color)"
+                                  color="var(--accent-color)"
+                                />
+                              ))}
+                            </div>
+
+                            {isOwnReview && (
+                              <button
+                                type="button"
+                                className="delete-review-btn"
+                                onClick={() => handleDeleteReview(rev.id)}
+                                disabled={deletingReviewId === rev.id}
+                                title="Remove your review"
+                              >
+                                <Trash2 size={13} />
+                                {deletingReviewId === rev.id
+                                  ? "Removing..."
+                                  : "Remove"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="review-comment-text">{rev.comment}</p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ================= TAB 3: PROMOS & VOUCHERS ================= */}
+          {activeNavTab === "promos" && (
+            <div className="promo-section">
+              <div className="promo-card">
+                <div className="promo-text">
+                  <Tag size={16} color="var(--accent-color)" />
+                  <span>
+                    {restaurant.promo ||
+                      "10% discount on total order for students!"}
+                  </span>
                 </div>
 
-                <textarea
-                  className="review-textarea"
-                  placeholder="Share your dining experience..."
-                  value={userComment}
-                  onChange={(e) => setUserComment(e.target.value)}
-                />
-
-                {reviewError && (
+                {voucherError && (
                   <div className="voucher-error-msg">
-                    <AlertCircle size={14} /> <span>{reviewError}</span>
+                    <AlertCircle size={14} /> <span>{voucherError}</span>
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  className="leave-review-btn"
-                  disabled={submittingReview}
-                >
-                  {submittingReview ? "Posting Review..." : "Leave a Review"}
-                </button>
-              </form>
-            )}
-
-            {/* Existing Reviews List */}
-            <div className="reviews-list">
-              {reviewsList.length === 0 ? (
-                <p className="reviews-empty-text">
-                  No reviews yet. Be the first to leave a review!
-                </p>
-              ) : (
-                reviewsList.map((rev) => {
-                  const isOwnReview =
-                    currentUser && rev.user_id === currentUser.id;
-
-                  return (
-                    <div key={rev.id} className="review-item-card">
-                      <div className="review-item-header">
-                        <span className="review-author">
-                          @
-                          {rev.profiles?.username ||
-                            rev.profiles?.full_name ||
-                            "foodlover"}
-                        </span>
-
-                        <div className="review-header-right">
-                          <div className="review-stars-display">
-                            {[...Array(rev.rating || 5)].map((_, idx) => (
-                              <Star
-                                key={idx}
-                                size={12}
-                                fill="var(--accent-color)"
-                                color="var(--accent-color)"
-                              />
-                            ))}
-                          </div>
-
-                          {isOwnReview && (
-                            <button
-                              type="button"
-                              className="delete-review-btn"
-                              onClick={() => handleDeleteReview(rev.id)}
-                              disabled={deletingReviewId === rev.id}
-                              title="Remove your review"
-                            >
-                              <Trash2 size={13} />
-                              {deletingReviewId === rev.id
-                                ? "Removing..."
-                                : "Remove"}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <p className="review-comment-text">{rev.comment}</p>
+                {claimedVoucher ? (
+                  <div className="voucher-claimed-box">
+                    <div className="voucher-claimed-title">
+                      <CheckCircle size={14} /> Voucher Claimed Successfully!
                     </div>
-                  );
-                })
+                    <div className="voucher-claimed-code">
+                      {claimedVoucher.voucher_code}
+                    </div>
+                    <div className="voucher-claimed-hint">
+                      Show this code at the cashier to redeem.
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="claim-voucher-btn"
+                    onClick={handleClaimVoucher}
+                    disabled={claiming}
+                  >
+                    {claiming ? "Claiming Voucher..." : "Claim Voucher Code"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ================= MENU ITEM POP-OUT MODAL (1 Rating Per Consumer, Tap to Undo) ================= */}
+      {selectedDishModal && (
+        <div
+          className="dish-modal-overlay"
+          onClick={() => setSelectedDishModal(null)}
+        >
+          <div className="dish-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="dish-modal-img-header">
+              {selectedDishModal.image_url ? (
+                <img
+                  src={selectedDishModal.image_url}
+                  alt={selectedDishModal.name}
+                />
+              ) : (
+                <Utensils size={42} color="#a8a29e" />
               )}
+
+              {selectedDishModal.special_tag &&
+                selectedDishModal.special_tag !== "None" && (
+                  <span className="detail-menu-tag-badge">
+                    {selectedDishModal.special_tag}
+                  </span>
+                )}
+
+              <button
+                type="button"
+                className="dish-modal-close-btn"
+                onClick={() => setSelectedDishModal(null)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="dish-modal-body">
+              <div className="dish-modal-title-row">
+                <h4 className="dish-modal-title">{selectedDishModal.name}</h4>
+                <span className="dish-modal-price">
+                  ₱{Number(selectedDishModal.price).toFixed(2)}
+                </span>
+              </div>
+
+              {(() => {
+                const modalStats = getDishRatingStats(selectedDishModal.id);
+                return (
+                  <>
+                    <div className="dish-modal-meta-row">
+                      <Star
+                        size={14}
+                        fill="var(--accent-color)"
+                        color="var(--accent-color)"
+                      />
+                      <span>
+                        {modalStats.avgText}{" "}
+                        {modalStats.count > 0
+                          ? `(${modalStats.count} rating${
+                              modalStats.count > 1 ? "s" : ""
+                            })`
+                          : "(No ratings yet)"}
+                      </span>
+                    </div>
+
+                    <div className="dish-modal-desc-box">
+                      {selectedDishModal.description ||
+                        "Freshly prepared house specialty made with local ingredients."}
+                    </div>
+
+                    <div className="dish-modal-rating-box">
+                      <span className="dish-modal-rating-title">
+                        {modalStats.myRating > 0
+                          ? `You rated this dish ${modalStats.myRating} ★`
+                          : "Rate this Menu Item"}
+                      </span>
+
+                      <div className="dish-modal-stars-row">
+                        {[1, 2, 3, 4, 5].map((starVal) => (
+                          <button
+                            key={starVal}
+                            type="button"
+                            disabled={ratingDishLoading}
+                            className="dish-star-btn"
+                            onClick={() =>
+                              handleToggleDishStar(selectedDishModal, starVal)
+                            }
+                            aria-label={`Rate dish ${starVal} stars`}
+                          >
+                            <Star
+                              size={24}
+                              fill={
+                                starVal <= modalStats.myRating
+                                  ? "var(--accent-color)"
+                                  : "none"
+                              }
+                              color={
+                                starVal <= modalStats.myRating
+                                  ? "var(--accent-color)"
+                                  : "var(--text-secondary)"
+                              }
+                            />
+                          </button>
+                        ))}
+                      </div>
+
+                      <span className="dish-modal-rating-hint">
+                        {modalStats.myRating > 0
+                          ? `Tap ${modalStats.myRating}★ again to undo and remove your rating`
+                          : "Tap a star to rate (1 rating per consumer)"}
+                      </span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
