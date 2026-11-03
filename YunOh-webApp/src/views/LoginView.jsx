@@ -69,7 +69,7 @@ export default function LoginView({ onLoginSuccess, switchToRegister }) {
     <div className="auth-penpot-container">
       {/* Brand Logo Badge */}
       <div className="auth-brand-badge">
-        <span>YunOh</span>
+        <span>YanOh</span>
       </div>
 
       <div className="auth-text-header" style={{ marginBottom: "24px" }}>

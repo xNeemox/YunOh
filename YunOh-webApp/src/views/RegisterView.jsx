@@ -103,7 +103,7 @@ export default function RegisterView({ switchToLogin }) {
     <div className="auth-penpot-container">
       {/* Brand Logo Badge */}
       <div className="auth-brand-badge">
-        <span>YunOh</span>
+        <span>YanOh</span>
       </div>
 
       <div className="auth-text-header">

@@ -9,6 +9,7 @@ import DetailView from "./views/DetailView";
 import BusinessProfileView from "./views/BusinessProfileView";
 import LoginView from "./views/LoginView";
 import RegisterView from "./views/RegisterView";
+import AdminView from "./views/AdminView";
 import BusinessRegistrationModal from "./components/BusinessRegistrationModal";
 import { supabase } from "./supabaseClient";
 import "./views/AuthViews.css";
@@ -107,7 +108,10 @@ export default function App() {
 
   return (
     <div className="desktop-container">
-      <div className="phone-frame" data-theme={isDarkMode ? "dark" : "light"}>
+      <div
+        className={`phone-frame ${userRole === "admin" ? "admin-mode" : ""}`}
+        data-theme={isDarkMode ? "dark" : "light"}
+      >
         <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
 
         <main className="app-content">
@@ -129,24 +133,8 @@ export default function App() {
               />
             )
           ) : userRole === "admin" ? (
-            /* --- ADMIN RESPONSIVE DASHBOARD VIEW --- */
-            <div
-              className="admin-dashboard-container"
-              style={{ padding: "16px" }}
-            >
-              <h2>Admin Control Center 🛡️</h2>
-              <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-                Welcome, Admin! Here you can manage verified dining spots and
-                moderate user accounts.
-              </p>
-              <button
-                onClick={handleSignOut}
-                className="penpot-submit-btn"
-                style={{ marginTop: "20px" }}
-              >
-                Sign Out Admin
-              </button>
-            </div>
+            /* --- FLEXIBLE MOBILE & DESKTOP ADMIN CONTROL CENTER --- */
+            <AdminView onSignOut={handleSignOut} />
           ) : isBusinessRegOpen ? (
             /* --- DEDICATED BUSINESS REGISTRATION PAGE --- */
             <BusinessRegistrationModal
@@ -224,7 +212,7 @@ export default function App() {
           )}
         </main>
 
-        {session && (
+        {session && userRole !== "admin" && (
           <BottomNav activeTab={activeTab} setActiveTab={handleTabChange} />
         )}
       </div>
