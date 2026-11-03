@@ -43,10 +43,12 @@ export default function DiscoverView({
   useEffect(() => {
     async function fetchRestaurants() {
       try {
-        // Join public.reviews(rating) so star rating & review count are 100% dynamic
+        // Strictly fetch ONLY Admin-verified businesses for the public Discover feed
         const { data, error } = await supabase
           .from("businesses")
-          .select("*, reviews(rating)");
+          .select("*, reviews(rating)")
+          .eq("is_verified", true)
+          .order("created_at", { ascending: false });
 
         if (error) {
           console.error("Error fetching businesses:", error.message);

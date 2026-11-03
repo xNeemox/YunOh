@@ -17,6 +17,7 @@ import {
   Upload,
   Image as ImageIcon,
   Edit3,
+  Clock,
   X,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
@@ -99,7 +100,7 @@ export default function ProfileView({
   const [editDishImagePreview, setEditDishImagePreview] = useState("");
   const [savingDishEdit, setSavingDishEdit] = useState(false);
 
-  // Unregister Business Confirmation State (Kept Separate Below Business Settings)
+  // Unregister Business Confirmation State
   const [showUnregisterConfirm, setShowUnregisterConfirm] = useState(false);
   const [unregisterConfirmText, setUnregisterConfirmText] = useState("");
   const [unregisterLoading, setUnregisterLoading] = useState(false);
@@ -158,7 +159,6 @@ export default function ProfileView({
   const fetchConsumerCommunityData = async () => {
     const userId = session.user.id;
 
-    // Reviews written by user
     const { data: revData } = await supabase
       .from("reviews")
       .select("id, rating, comment, created_at, businesses(name)")
@@ -166,7 +166,6 @@ export default function ProfileView({
       .order("created_at", { ascending: false });
     setMyReviews(revData || []);
 
-    // Dish ratings given by user (menu_item_ratings)
     const { data: rateData } = await supabase
       .from("menu_item_ratings")
       .select("id, rating, created_at, menu_items(name, price)")
@@ -174,7 +173,6 @@ export default function ProfileView({
       .order("created_at", { ascending: false });
     setMyDishRatings(rateData || []);
 
-    // Claimed Vouchers
     const { data: vouchData } = await supabase
       .from("user_vouchers")
       .select("id, voucher_code, promo_text, claimed_at, businesses(name)")
@@ -182,7 +180,6 @@ export default function ProfileView({
       .order("claimed_at", { ascending: false });
     setMyVouchers(vouchData || []);
 
-    // Followed Businesses
     const { data: followData } = await supabase
       .from("follows")
       .select("id, created_at, businesses(id, name, category, barangay)")
@@ -196,7 +193,8 @@ export default function ProfileView({
     const { data, error } = await supabase
       .from("businesses")
       .select("*")
-      .eq("owner_id", session.user.id);
+      .eq("owner_id", session.user.id)
+      .order("created_at", { ascending: false });
 
     if (!error && data && data.length > 0) {
       setOwnedBusinesses(data);
@@ -204,7 +202,9 @@ export default function ProfileView({
       setEditingBusiness(biz);
       setProfileImagePreview(biz.business_profile_image || "");
       setCoverImagePreview(biz.cover_image_url || "");
-      fetchMerchantDetails(biz.id);
+      if (biz.is_verified) {
+        fetchMerchantDetails(biz.id);
+      }
     } else {
       setOwnedBusinesses([]);
       setEditingBusiness(null);
@@ -212,7 +212,6 @@ export default function ProfileView({
   };
 
   const fetchMerchantDetails = async (businessId) => {
-    // A. Reviews on this business
     const { data: revs } = await supabase
       .from("reviews")
       .select("id, rating, comment, created_at, profiles(username)")
@@ -220,7 +219,6 @@ export default function ProfileView({
       .order("created_at", { ascending: false });
     setMerchantReviews(revs || []);
 
-    // B. Followers of this business
     const { data: fols } = await supabase
       .from("follows")
       .select("id, created_at, profiles(username, email)")
@@ -228,14 +226,12 @@ export default function ProfileView({
       .order("created_at", { ascending: false });
     setMerchantFollowers(fols || []);
 
-    // C. Profile Visits count (from business_visits)
     const { count: visitCount } = await supabase
       .from("business_visits")
       .select("id", { count: "exact", head: true })
       .eq("business_id", businessId);
     setMerchantVisitsCount(visitCount || 0);
 
-    // D. Menu Items for this business
     const { data: items } = await supabase
       .from("menu_items")
       .select("*")
@@ -243,7 +239,6 @@ export default function ProfileView({
       .order("created_at", { ascending: false });
     setMerchantMenuItems(items || []);
 
-    // E. Menu Item Ratings across all dishes of this business
     if (items && items.length > 0) {
       const itemIds = items.map((i) => i.id);
       const { data: itemRatings } = await supabase
@@ -254,6 +249,26 @@ export default function ProfileView({
       setMerchantDishRatings(itemRatings || []);
     } else {
       setMerchantDishRatings([]);
+    }
+  };
+
+  // Withdraw Pending Application (If still unverified)
+  const handleWithdrawPendingApplication = async () => {
+    if (!editingBusiness) return;
+    const confirmed = window.confirm(
+      `Withdraw your registration request for "${editingBusiness.name}"?`,
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase
+      .from("businesses")
+      .delete()
+      .eq("id", editingBusiness.id)
+      .eq("owner_id", session.user.id);
+
+    if (!error) {
+      setOwnedBusinesses([]);
+      setEditingBusiness(null);
     }
   };
 
@@ -278,7 +293,7 @@ export default function ProfileView({
     }
   };
 
-  // Update Storefront Settings (Profile Image, Cover Banner, Hours, Promo, Description, Contact)
+  // Update Storefront Settings
   const handleUpdateStorefront = async (e) => {
     e.preventDefault();
     if (!editingBusiness) return;
@@ -452,7 +467,7 @@ export default function ProfileView({
     }
   };
 
-  // Upload New Photos to Establishment Gallery (businesses.gallery_images)
+  // Upload New Photos to Establishment Gallery
   const handleUploadGalleryPhotos = async (e) => {
     e.preventDefault();
     if (!editingBusiness || newGalleryFiles.length === 0) return;
@@ -560,7 +575,6 @@ export default function ProfileView({
     }
   };
 
-  // Calculate dynamic Merchant Rating Score
   const getMerchantRatingScore = () => {
     if (merchantReviews.length === 0) return "0";
     const sum = merchantReviews.reduce(
@@ -619,7 +633,7 @@ export default function ProfileView({
 
   return (
     <div className="profile-view">
-      {/* 1. Centered Profile Header (Strictly Username, No Full Name) */}
+      {/* 1. Centered Profile Header (Strictly Username) */}
       <div className="profile-centered-header">
         <div className="profile-avatar-circle-lg">
           {profileData?.avatar_url ? (
@@ -662,12 +676,10 @@ export default function ProfileView({
       {/* ================= USER (CONSUMER) MODE ================= */}
       {userMode === "consumer" && (
         <>
-          {/* Warm Tinted Community Card (2x2 Grid) */}
           <div className="profile-tinted-section">
             <h4 className="profile-tinted-heading">Community</h4>
 
             <div className="profile-stats-grid-2x2">
-              {/* Box 1: Reviews */}
               <div
                 className={`profile-stat-white-box ${
                   activeConsumerBox === "reviews" ? "active-box" : ""
@@ -685,7 +697,6 @@ export default function ProfileView({
                 <div className="profile-stat-number">{myReviews.length}</div>
               </div>
 
-              {/* Box 2: Ratings (Menu Item Ratings) */}
               <div
                 className={`profile-stat-white-box ${
                   activeConsumerBox === "ratings" ? "active-box" : ""
@@ -705,7 +716,6 @@ export default function ProfileView({
                 </div>
               </div>
 
-              {/* Box 3: Vouchers */}
               <div
                 className={`profile-stat-white-box ${
                   activeConsumerBox === "vouchers" ? "active-box" : ""
@@ -723,7 +733,6 @@ export default function ProfileView({
                 <div className="profile-stat-number">{myVouchers.length}</div>
               </div>
 
-              {/* Box 4: Following */}
               <div
                 className={`profile-stat-white-box ${
                   activeConsumerBox === "following" ? "active-box" : ""
@@ -742,7 +751,6 @@ export default function ProfileView({
               </div>
             </div>
 
-            {/* Expandable Drawer when a Community Box is tapped */}
             {activeConsumerBox === "reviews" && (
               <div className="profile-drawer-panel">
                 <div className="profile-drawer-header">
@@ -853,6 +861,7 @@ export default function ProfileView({
       {userMode === "business" && (
         <>
           {ownedBusinesses.length === 0 ? (
+            /* STATE 1: No Business Registered Yet */
             <div className="profile-tinted-section">
               <h4 className="profile-tinted-heading centered">
                 Merchant Analytics & Storefront
@@ -871,7 +880,58 @@ export default function ProfileView({
                 </button>
               </div>
             </div>
+          ) : !editingBusiness?.is_verified ? (
+            /* STATE 2: Business Registered, Pending Admin Approval (is_verified === false) */
+            <div className="merchant-pending-card">
+              <span className="merchant-pending-badge">
+                <Clock size={14} /> Pending Admin Verification
+              </span>
+
+              <h4 className="merchant-pending-title">{editingBusiness.name}</h4>
+
+              <p className="merchant-pending-sub">
+                Your business registration and uploaded credentials have been
+                submitted! It is currently hidden from the public feed until a
+                YunOh Admin reviews and verifies your application.
+              </p>
+
+              <div className="merchant-pending-meta">
+                <div>
+                  <strong>Category:</strong> {editingBusiness.category}
+                </div>
+                <div>
+                  <strong>Address:</strong>{" "}
+                  {editingBusiness.address ||
+                    `Brgy. ${editingBusiness.barangay}, Bayombong`}
+                </div>
+                <div>
+                  <strong>Credentials Attached:</strong>{" "}
+                  {Array.isArray(editingBusiness.credentials_images)
+                    ? editingBusiness.credentials_images.length
+                    : 0}{" "}
+                  files
+                </div>
+              </div>
+
+              <div className="merchant-pending-actions">
+                <button
+                  type="button"
+                  onClick={fetchOwnedBusinesses}
+                  className="merchant-refresh-status-btn"
+                >
+                  Check Approval Status
+                </button>
+                <button
+                  type="button"
+                  onClick={handleWithdrawPendingApplication}
+                  className="merchant-cancel-app-btn"
+                >
+                  Withdraw
+                </button>
+              </div>
+            </div>
           ) : (
+            /* STATE 3: Admin Approved & Verified (is_verified === true) */
             <>
               {/* 1. Merchant Analytics & Storefront Tinted 2x2 Card */}
               <div className="profile-tinted-section">
@@ -911,11 +971,10 @@ export default function ProfileView({
                 </div>
               </div>
 
-              {/* 2. Business Community List Card (Reviews, Ratings, Followers Details) */}
+              {/* 2. Business Community List Card */}
               <div className="profile-list-card">
                 <div className="profile-list-card-header">Community</div>
 
-                {/* Row 1: Reviews Details */}
                 <div
                   className="profile-list-row"
                   onClick={() =>
@@ -960,7 +1019,6 @@ export default function ProfileView({
                   </div>
                 )}
 
-                {/* Row 2: Dish Ratings Details */}
                 <div
                   className="profile-list-row"
                   onClick={() =>
@@ -1005,7 +1063,6 @@ export default function ProfileView({
                   </div>
                 )}
 
-                {/* Row 3: Followers Details */}
                 <div
                   className="profile-list-row"
                   onClick={() =>
@@ -1048,7 +1105,7 @@ export default function ProfileView({
                 )}
               </div>
 
-              {/* 3. BUSINESS SETTINGS DROPDOWN CARD (Menu Manager | Storefront Settings | Establishment Gallery) */}
+              {/* 3. BUSINESS SETTINGS DROPDOWN CARD */}
               <div className="profile-list-card">
                 <div className="profile-list-card-header">
                   Business Settings
@@ -1193,7 +1250,6 @@ export default function ProfileView({
                       </button>
                     </form>
 
-                    {/* Existing Menu Items List with Inline Edit Toggle & Delete */}
                     {merchantMenuItems.length > 0 && (
                       <div className="merchant-menu-list">
                         {merchantMenuItems.map((item) => (
@@ -1238,7 +1294,6 @@ export default function ProfileView({
                               </div>
                             </div>
 
-                            {/* Inline Edit Dish Form */}
                             {editingDishId === item.id && (
                               <div className="merchant-edit-dish-box">
                                 <div className="merchant-row-2col">
@@ -1583,7 +1638,7 @@ export default function ProfileView({
                   </div>
                 )}
 
-                {/* Dropdown 3: Establishment Gallery (Upload or Remove Photos) */}
+                {/* Dropdown 3: Establishment Gallery */}
                 <div
                   className="profile-list-row"
                   onClick={() =>
@@ -1678,7 +1733,6 @@ export default function ProfileView({
                       )}
                     </form>
 
-                    {/* Current Gallery Photos Grid with Remove Button */}
                     {currentGalleryList.length === 0 ? (
                       <p className="profile-drawer-empty">
                         No photos in your establishment gallery yet.
@@ -1775,10 +1829,9 @@ export default function ProfileView({
         </>
       )}
 
-      {/* ================= SHARED ACCOUNT SECTION (Preferences & Profile Only) ================= */}
+      {/* ================= SHARED ACCOUNT SECTION ================= */}
       <h4 className="profile-section-heading">Account</h4>
       <div className="profile-list-card">
-        {/* Row 1: Preferences */}
         <div
           className="profile-list-row"
           onClick={() =>
@@ -1813,7 +1866,6 @@ export default function ProfileView({
           </div>
         )}
 
-        {/* Row 2: Profile */}
         <div
           className="profile-list-row"
           onClick={() =>

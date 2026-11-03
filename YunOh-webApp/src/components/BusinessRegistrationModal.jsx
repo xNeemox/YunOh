@@ -7,6 +7,7 @@ import {
   Clock,
   ShieldCheck,
   AlertCircle,
+  CheckCircle,
   X,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
@@ -22,6 +23,7 @@ const AVAILABLE_CATEGORIES = [
   "Fine Dining",
   "Grill / Casual",
   "Bakery & Pastries",
+  "Desserts",
 ];
 
 const BAYOMBONG_BARANGAYS = [
@@ -85,12 +87,12 @@ export default function BusinessRegistrationModal({
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   // Toggle Multi-Category Chip
   const handleToggleCategory = (cat) => {
     setSelectedCategories((prev) => {
       if (prev.includes(cat)) {
-        // Keep at least 1 category selected
         return prev.length > 1 ? prev.filter((c) => c !== cat) : prev;
       }
       return [...prev, cat];
@@ -118,8 +120,7 @@ export default function BusinessRegistrationModal({
   };
 
   // Upload helper to 'yunoh-media' Supabase Storage bucket
-  const uploadFileToBucket = async (file, folder) => {
-    const userId = session?.user?.id || "owner";
+  const uploadFileToBucket = async (file, folder, userId) => {
     const ext = file.name.split(".").pop();
     const path = `${folder}/${userId}-${Date.now()}-${Math.random()
       .toString(36)
@@ -138,22 +139,30 @@ export default function BusinessRegistrationModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setSuccessMsg("");
 
-    if (!session?.user?.id) {
-      setErrorMsg("You must be signed in to register a business.");
-      return;
+    // Fallback check in case session prop wasn't passed down
+    let activeUserId = session?.user?.id;
+    if (!activeUserId) {
+      const { data: authData } = await supabase.auth.getUser();
+      activeUserId = authData?.user?.id;
     }
 
-    if (credentialFiles.length < 3) {
-      setErrorMsg(
-        `Please upload at least 3 business credential documents (currently uploaded: ${credentialFiles.length}/3).`,
-      );
+    if (!activeUserId) {
+      setErrorMsg("You must be signed in to register a business.");
       return;
     }
 
     if (!profileImgFile || !coverImgFile) {
       setErrorMsg(
-        "Please upload both a Business Profile Image and a Storefront Cover Banner.",
+        "Please upload both a Business Profile Image (Logo) and a Cover Banner Photo.",
+      );
+      return;
+    }
+
+    if (credentialFiles.length < 3) {
+      setErrorMsg(
+        `Please upload at least 3 business credential documents (currently attached: ${credentialFiles.length}/3).`,
       );
       return;
     }
@@ -165,23 +174,25 @@ export default function BusinessRegistrationModal({
       const profileImageUrl = await uploadFileToBucket(
         profileImgFile,
         "storefronts",
+        activeUserId,
       );
       const coverImageUrl = await uploadFileToBucket(
         coverImgFile,
         "storefronts",
+        activeUserId,
       );
 
       // 2. Upload Gallery Photos (if any)
       const galleryUrls = [];
       for (const file of galleryFiles) {
-        const url = await uploadFileToBucket(file, "gallery");
+        const url = await uploadFileToBucket(file, "gallery", activeUserId);
         galleryUrls.push(url);
       }
 
       // 3. Upload Minimum 3 Credential Documents
       const credentialUrls = [];
       for (const file of credentialFiles) {
-        const url = await uploadFileToBucket(file, "credentials");
+        const url = await uploadFileToBucket(file, "credentials", activeUserId);
         credentialUrls.push(url);
       }
 
@@ -197,12 +208,12 @@ export default function BusinessRegistrationModal({
 
       const categoryString = selectedCategories.join(", ");
 
-      // 5. Insert Business Record into public.businesses
+      // 5. Insert Business Record into public.businesses (is_verified: false -> appears in Admin Pending tab!)
       const { data: insertedBiz, error: insertError } = await supabase
         .from("businesses")
         .insert([
           {
-            owner_id: session.user.id,
+            owner_id: activeUserId,
             name: name.trim(),
             category: categoryString,
             description: description.trim() || null,
@@ -229,15 +240,23 @@ export default function BusinessRegistrationModal({
 
       if (insertError) throw insertError;
 
-      // 6. Update User Role to 'owner' in public.profiles
+      // 6. Update User Role to 'owner' in public.profiles (unless user is already admin)
       await supabase
         .from("profiles")
         .update({ role: "owner" })
-        .eq("id", session.user.id);
+        .eq("id", activeUserId)
+        .neq("role", "admin");
 
-      if (onSubmitSuccess) onSubmitSuccess(insertedBiz);
-      onClose();
+      setSuccessMsg(
+        "Establishment submitted! Your registration is now pending in the Admin Control Center.",
+      );
+
+      setTimeout(() => {
+        if (onSubmitSuccess) onSubmitSuccess(insertedBiz);
+        onClose();
+      }, 1400);
     } catch (err) {
+      console.error("Business Registration Error:", err);
       setErrorMsg(err.message || "Failed to register business.");
     } finally {
       setSubmitting(false);
@@ -259,12 +278,6 @@ export default function BusinessRegistrationModal({
             documents to list your establishment on YunOh.
           </p>
         </div>
-
-        {errorMsg && (
-          <div className="biz-reg-alert error">
-            <AlertCircle size={16} /> <span>{errorMsg}</span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="modal-body">
           {/* 1. Basic Establishment Details */}
@@ -617,10 +630,20 @@ export default function BusinessRegistrationModal({
             )}
           </div>
 
-          <div
-            className="modal-footer"
-            style={{ padding: 0, marginTop: "8px" }}
-          >
+          {/* Status Feedback Right Above Submit Button */}
+          {errorMsg && (
+            <div className="biz-reg-alert error">
+              <AlertCircle size={16} /> <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="biz-reg-alert success">
+              <CheckCircle size={16} /> <span>{successMsg}</span>
+            </div>
+          )}
+
+          <div className="modal-footer biz-reg-footer-actions">
             <button
               type="button"
               onClick={onClose}

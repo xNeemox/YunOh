@@ -1327,3 +1327,86 @@
 .merchant-gallery-delete-btn:hover {
   background-color: #dc2626;
 }
+
+/* --- Pending Admin Verification Card in Business Mode --- */
+.merchant-pending-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1.5px dashed #d97706;
+  border-radius: 16px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.merchant-pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background-color: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.merchant-pending-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.merchant-pending-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.merchant-pending-meta {
+  width: 100%;
+  background-color: var(--bg-primary, #faf6f0);
+  border: 1px solid var(--border-color, #e6e1da);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.merchant-pending-actions {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.merchant-refresh-status-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--accent-color, #a8653b);
+  background-color: var(--accent-color, #a8653b);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.merchant-cancel-app-btn {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}

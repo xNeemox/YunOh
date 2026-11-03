@@ -191,6 +191,23 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* CRITICAL: Force grid children to respect column boundaries and shrink */
+.biz-reg-grid-2col > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure any inputs or form elements inside the columns don't overflow */
+.biz-reg-grid-2col input,
+.biz-reg-grid-2col select {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* --- Multi-Category Selectable Chips --- */
@@ -344,4 +361,15 @@
 .biz-reg-alert.error {
   background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
+}
+
+.biz-reg-alert.success {
+  background-color: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #059669;
+}
+
+.biz-reg-footer-actions {
+  padding: 0;
+  margin-top: 8px;
 }

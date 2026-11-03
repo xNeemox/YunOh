@@ -5,7 +5,7 @@ import "./Header.css"; // Import the CSS file for styling
 export default function Header({ isDarkMode, toggleTheme }) {
   return (
     <header className="app-header">
-      <div className="app-logo">YanOh 🍜</div>
+      <div className="app-logo">YanOh</div>
       <button
         className="theme-toggle-btn"
         onClick={toggleTheme}
