@@ -1,14 +1,9 @@
 /* --- Responsive Desktop Expansion for .phone-frame when Admin is Logged In --- */
-@media (min-width: 768px) {
-  .phone-frame.admin-mode {
-    max-width: 1080px !important;
-    width: 94vw !important;
-    height: 90vh !important;
-    border-radius: 24px;
-    transition:
-      max-width 0.3s ease,
-      width 0.3s ease;
-  }
+.admin-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 6px 4px 32px 4px;
 }
 
 /* --- Main Admin View Container --- */
@@ -219,7 +214,7 @@
 
 @media (min-width: 768px) {
   .admin-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     align-items: start;
   }
 }
