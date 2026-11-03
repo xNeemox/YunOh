@@ -15,6 +15,9 @@ import {
   AlertTriangle,
   Utensils,
   Upload,
+  Image as ImageIcon,
+  Edit3,
+  X,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./ProfileView.css";
@@ -50,12 +53,20 @@ export default function ProfileView({
   const [editingBusiness, setEditingBusiness] = useState(null);
   const [updateStatus, setUpdateStatus] = useState("");
 
+  // Collapsible Dropdown State for "Business Settings" ('menu' | 'storefront' | 'gallery' | null)
+  const [activeBizSettingRow, setActiveBizSettingRow] = useState(null);
+
   // Storefront Image File Upload States
   const [profileImageFile, setProfileImageFile] = useState(null);
   const [profileImagePreview, setProfileImagePreview] = useState("");
   const [coverImageFile, setCoverImageFile] = useState(null);
   const [coverImagePreview, setCoverImagePreview] = useState("");
   const [uploadingStorefront, setUploadingStorefront] = useState(false);
+
+  // Gallery Management State (Upload / Remove photos from businesses.gallery_images)
+  const [newGalleryFiles, setNewGalleryFiles] = useState([]);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryStatusMsg, setGalleryStatusMsg] = useState("");
 
   // Merchant Analytics & Community Details
   const [merchantReviews, setMerchantReviews] = useState([]);
@@ -75,7 +86,20 @@ export default function ProfileView({
   const [addingDish, setAddingDish] = useState(false);
   const [menuStatusMsg, setMenuStatusMsg] = useState("");
 
-  // Unregister Business Confirmation State
+  // Inline Edit Dish Toggle State
+  const [editingDishId, setEditingDishId] = useState(null);
+  const [editDishForm, setEditDishForm] = useState({
+    name: "",
+    price: "",
+    description: "",
+    special_tag: "None",
+    image_url: "",
+  });
+  const [editDishImageFile, setEditDishImageFile] = useState(null);
+  const [editDishImagePreview, setEditDishImagePreview] = useState("");
+  const [savingDishEdit, setSavingDishEdit] = useState(false);
+
+  // Unregister Business Confirmation State (Kept Separate Below Business Settings)
   const [showUnregisterConfirm, setShowUnregisterConfirm] = useState(false);
   const [unregisterConfirmText, setUnregisterConfirmText] = useState("");
   const [unregisterLoading, setUnregisterLoading] = useState(false);
@@ -91,7 +115,9 @@ export default function ProfileView({
   // --- HELPER: Upload File to 'yunoh-media' Supabase Storage Bucket ---
   const uploadImageToStorage = async (file, folder = "uploads") => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `${folder}/${session.user.id}-${Date.now()}.${fileExt}`;
+    const fileName = `${folder}/${session.user.id}-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 7)}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("yunoh-media")
@@ -252,7 +278,7 @@ export default function ProfileView({
     }
   };
 
-  // Update Storefront Assets (Uploads new image files if selected)
+  // Update Storefront Settings (Profile Image, Cover Banner, Hours, Promo, Description, Contact)
   const handleUpdateStorefront = async (e) => {
     e.preventDefault();
     if (!editingBusiness) return;
@@ -285,6 +311,9 @@ export default function ProfileView({
           cover_image_url: updatedCoverImgUrl,
           open_time: editingBusiness.open_time,
           close_time: editingBusiness.close_time,
+          promo: editingBusiness.promo || null,
+          description: editingBusiness.description || null,
+          contact_number: editingBusiness.contact_number || null,
         })
         .eq("id", editingBusiness.id);
 
@@ -293,7 +322,7 @@ export default function ProfileView({
       } else {
         setProfileImageFile(null);
         setCoverImageFile(null);
-        setUpdateStatus("Storefront updated successfully!");
+        setUpdateStatus("Storefront settings updated!");
         setTimeout(() => setUpdateStatus(""), 3000);
         fetchOwnedBusinesses();
       }
@@ -304,7 +333,7 @@ export default function ProfileView({
     }
   };
 
-  // Add New Dish to menu_items (Uploads dish photo file to 'yunoh-media')
+  // Add New Dish to menu_items
   const handleAddMenuItem = async (e) => {
     e.preventDefault();
     if (!editingBusiness || !newDishName.trim() || !newDishPrice) return;
@@ -352,6 +381,65 @@ export default function ProfileView({
     }
   };
 
+  // Start Editing an Existing Dish Inline
+  const handleStartEditDish = (item) => {
+    if (editingDishId === item.id) {
+      setEditingDishId(null);
+      return;
+    }
+    setEditingDishId(item.id);
+    setEditDishForm({
+      name: item.name || "",
+      price: item.price || "",
+      description: item.description || "",
+      special_tag: item.special_tag || "None",
+      image_url: item.image_url || "",
+    });
+    setEditDishImageFile(null);
+    setEditDishImagePreview(item.image_url || "");
+  };
+
+  // Save Edited Dish to menu_items
+  const handleSaveEditDish = async (itemId) => {
+    if (!editDishForm.name.trim() || editDishForm.price === "") return;
+    setSavingDishEdit(true);
+
+    try {
+      let finalImageUrl = editDishForm.image_url || null;
+      if (editDishImageFile) {
+        finalImageUrl = await uploadImageToStorage(
+          editDishImageFile,
+          "menu-items",
+        );
+      }
+
+      const { error } = await supabase
+        .from("menu_items")
+        .update({
+          name: editDishForm.name.trim(),
+          price: parseFloat(editDishForm.price),
+          description: editDishForm.description.trim() || null,
+          special_tag: editDishForm.special_tag,
+          image_url: finalImageUrl,
+        })
+        .eq("id", itemId);
+
+      if (error) {
+        setMenuStatusMsg(`Error updating dish: ${error.message}`);
+      } else {
+        setEditingDishId(null);
+        setEditDishImageFile(null);
+        setMenuStatusMsg("Dish updated successfully!");
+        fetchMerchantDetails(editingBusiness.id);
+        setTimeout(() => setMenuStatusMsg(""), 3000);
+      }
+    } catch (err) {
+      setMenuStatusMsg(`Error uploading dish photo: ${err.message}`);
+    } finally {
+      setSavingDishEdit(false);
+    }
+  };
+
   // Delete Dish from menu_items
   const handleDeleteMenuItem = async (itemId) => {
     const { error } = await supabase
@@ -361,6 +449,75 @@ export default function ProfileView({
 
     if (!error && editingBusiness) {
       fetchMerchantDetails(editingBusiness.id);
+    }
+  };
+
+  // Upload New Photos to Establishment Gallery (businesses.gallery_images)
+  const handleUploadGalleryPhotos = async (e) => {
+    e.preventDefault();
+    if (!editingBusiness || newGalleryFiles.length === 0) return;
+
+    setGalleryUploading(true);
+    setGalleryStatusMsg("Uploading photos to gallery...");
+
+    try {
+      const uploadedUrls = [];
+      for (const file of newGalleryFiles) {
+        const url = await uploadImageToStorage(file, "gallery");
+        uploadedUrls.push(url);
+      }
+
+      const existingGallery = Array.isArray(editingBusiness.gallery_images)
+        ? editingBusiness.gallery_images.filter(Boolean)
+        : [];
+      const updatedGallery = [...existingGallery, ...uploadedUrls];
+
+      const { error } = await supabase
+        .from("businesses")
+        .update({ gallery_images: updatedGallery })
+        .eq("id", editingBusiness.id);
+
+      if (error) {
+        setGalleryStatusMsg(`Error: ${error.message}`);
+      } else {
+        setNewGalleryFiles([]);
+        setEditingBusiness((prev) => ({
+          ...prev,
+          gallery_images: updatedGallery,
+        }));
+        setGalleryStatusMsg("Gallery photos added!");
+        setTimeout(() => setGalleryStatusMsg(""), 3000);
+      }
+    } catch (err) {
+      setGalleryStatusMsg(`Error uploading gallery photos: ${err.message}`);
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  // Remove Photo from Establishment Gallery
+  const handleRemoveGalleryPhoto = async (photoUrlToRemove) => {
+    if (!editingBusiness) return;
+
+    const currentGallery = Array.isArray(editingBusiness.gallery_images)
+      ? editingBusiness.gallery_images.filter(Boolean)
+      : [];
+    const updatedGallery = currentGallery.filter(
+      (url) => url !== photoUrlToRemove,
+    );
+
+    const { error } = await supabase
+      .from("businesses")
+      .update({ gallery_images: updatedGallery })
+      .eq("id", editingBusiness.id);
+
+    if (!error) {
+      setEditingBusiness((prev) => ({
+        ...prev,
+        gallery_images: updatedGallery,
+      }));
+      setGalleryStatusMsg("Photo removed from gallery.");
+      setTimeout(() => setGalleryStatusMsg(""), 2500);
     }
   };
 
@@ -456,6 +613,10 @@ export default function ProfileView({
   const displayUsername =
     profileData?.username || session.user.email?.split("@")[0] || "user";
 
+  const currentGalleryList = Array.isArray(editingBusiness?.gallery_images)
+    ? editingBusiness.gallery_images.filter(Boolean)
+    : [];
+
   return (
     <div className="profile-view">
       {/* 1. Centered Profile Header (Strictly Username, No Full Name) */}
@@ -537,7 +698,7 @@ export default function ProfileView({
               >
                 <div className="profile-stat-label-row">
                   <Star size={15} color="var(--accent-color)" />
-                  <span>Food Ratings</span>
+                  <span>Ratings</span>
                 </div>
                 <div className="profile-stat-number">
                   {myDishRatings.length}
@@ -887,294 +1048,669 @@ export default function ProfileView({
                 )}
               </div>
 
-              {/* 3. Digital Menu Manager (menu_items CRUD with Direct Image Upload) */}
-              <div className="merchant-manager-card">
-                <h5 className="merchant-manager-title">
-                  <span>
-                    <Utensils size={15} /> Menu Manager (
-                    {merchantMenuItems.length})
-                  </span>
-                </h5>
+              {/* 3. BUSINESS SETTINGS DROPDOWN CARD (Menu Manager | Storefront Settings | Establishment Gallery) */}
+              <div className="profile-list-card">
+                <div className="profile-list-card-header">
+                  Business Settings
+                </div>
 
-                {menuStatusMsg && (
-                  <div
-                    className={`merchant-status-msg ${
-                      menuStatusMsg.includes("Error") ? "error" : "success"
-                    }`}
-                  >
-                    {menuStatusMsg}
-                  </div>
-                )}
-
-                <form
-                  onSubmit={handleAddMenuItem}
-                  className="merchant-form-stack"
+                {/* Dropdown 1: Digital Menu Manager */}
+                <div
+                  className="profile-list-row"
+                  onClick={() =>
+                    setActiveBizSettingRow(
+                      activeBizSettingRow === "menu" ? null : "menu",
+                    )
+                  }
                 >
-                  <div className="merchant-row-2col">
-                    <div className="merchant-input-group">
-                      <label>Dish Name *</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Pancit Batil Patong"
-                        value={newDishName}
-                        onChange={(e) => setNewDishName(e.target.value)}
-                        required
-                        className="merchant-text-input"
-                      />
-                    </div>
-                    <div className="merchant-input-group">
-                      <label>Price (₱) *</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="135.00"
-                        value={newDishPrice}
-                        onChange={(e) => setNewDishPrice(e.target.value)}
-                        required
-                        className="merchant-text-input"
-                      />
-                    </div>
+                  <div className="profile-list-row-left">
+                    <Utensils size={18} />
+                    <span>
+                      Digital Menu Manager ({merchantMenuItems.length})
+                    </span>
                   </div>
+                  <ChevronRight
+                    size={16}
+                    color="var(--text-secondary)"
+                    className={
+                      activeBizSettingRow === "menu" ? "chevron-rotated" : ""
+                    }
+                  />
+                </div>
 
-                  <div className="merchant-row-2col">
-                    <div className="merchant-input-group">
-                      <label>Special Tag</label>
-                      <select
-                        value={newDishTag}
-                        onChange={(e) => setNewDishTag(e.target.value)}
-                        className="merchant-select-input"
+                {activeBizSettingRow === "menu" && (
+                  <div className="profile-list-drawer">
+                    {menuStatusMsg && (
+                      <div
+                        className={`merchant-status-msg ${
+                          menuStatusMsg.includes("Error") ? "error" : "success"
+                        }`}
                       >
-                        <option value="None">None</option>
-                        <option value="Best Seller">Best Seller</option>
-                        <option value="New Arrivals">New Arrivals</option>
-                        <option value="Special Offer">Special Offer</option>
-                      </select>
-                    </div>
-
-                    <div className="merchant-input-group">
-                      <label>Dish Photo</label>
-                      <div className="merchant-file-upload-row">
-                        <label className="merchant-file-label-btn">
-                          <Upload size={14} />
-                          <span>
-                            {newDishImageFile ? "Change Photo" : "Upload Photo"}
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="merchant-file-input-hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setNewDishImageFile(file);
-                                setNewDishImagePreview(
-                                  URL.createObjectURL(file),
-                                );
-                              }
-                            }}
-                          />
-                        </label>
-                        {newDishImagePreview && (
-                          <image_url
-                            alt="Dish preview"
-                            className="merchant-upload-preview-thumb"
-                          />
-                        )}
+                        {menuStatusMsg}
                       </div>
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="merchant-input-group">
-                    <label>Description / Ingredients</label>
-                    <input
-                      type="text"
-                      placeholder="Short description of the dish..."
-                      value={newDishDesc}
-                      onChange={(e) => setNewDishDesc(e.target.value)}
-                      className="merchant-text-input"
-                    />
-                  </div>
+                    <form
+                      onSubmit={handleAddMenuItem}
+                      className="merchant-form-stack"
+                    >
+                      <div className="merchant-row-2col">
+                        <div className="merchant-input-group">
+                          <label>Dish Name *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Pancit Batil Patong"
+                            value={newDishName}
+                            onChange={(e) => setNewDishName(e.target.value)}
+                            required
+                            className="merchant-text-input"
+                          />
+                        </div>
+                        <div className="merchant-input-group">
+                          <label>Price (₱) *</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="135.00"
+                            value={newDishPrice}
+                            onChange={(e) => setNewDishPrice(e.target.value)}
+                            required
+                            className="merchant-text-input"
+                          />
+                        </div>
+                      </div>
 
-                  <button
-                    type="submit"
-                    className="auth-submit-btn"
-                    disabled={addingDish}
-                  >
-                    <Plus size={15} />{" "}
-                    {addingDish ? "Uploading Dish..." : "Add Dish to Menu"}
-                  </button>
-                </form>
+                      <div className="merchant-row-2col">
+                        <div className="merchant-input-group">
+                          <label>Special Tag</label>
+                          <select
+                            value={newDishTag}
+                            onChange={(e) => setNewDishTag(e.target.value)}
+                            className="merchant-select-input"
+                          >
+                            <option value="None">None</option>
+                            <option value="Best Seller">Best Seller</option>
+                            <option value="New Arrivals">New Arrivals</option>
+                            <option value="Special Offer">Special Offer</option>
+                          </select>
+                        </div>
 
-                {merchantMenuItems.length > 0 && (
-                  <div className="merchant-menu-list">
-                    {merchantMenuItems.map((item) => (
-                      <div key={item.id} className="merchant-menu-item-row">
-                        <div className="merchant-menu-item-info">
-                          {item.image_url && (
-                            <img
-                              src={item.image_url}
-                              alt={item.name}
-                              className="merchant-menu-thumb"
-                            />
-                          )}
-                          <div className="merchant-menu-text">
-                            <div className="merchant-menu-name">
-                              {item.name}
-                            </div>
-                            <div className="merchant-menu-meta">
-                              ₱{Number(item.price).toFixed(2)} •{" "}
-                              {item.special_tag}
-                            </div>
+                        <div className="merchant-input-group">
+                          <label>Dish Photo</label>
+                          <div className="merchant-file-upload-row">
+                            <label className="merchant-file-label-btn">
+                              <Upload size={14} />
+                              <span>
+                                {newDishImageFile
+                                  ? "Change Photo"
+                                  : "Upload Photo"}
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="merchant-file-input-hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    setNewDishImageFile(file);
+                                    setNewDishImagePreview(
+                                      URL.createObjectURL(file),
+                                    );
+                                  }
+                                }}
+                              />
+                            </label>
+                            {newDishImagePreview && (
+                              <img
+                                src={newDishImagePreview}
+                                alt="Dish preview"
+                                className="merchant-upload-preview-thumb"
+                              />
+                            )}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          className="merchant-icon-btn"
-                          onClick={() => handleDeleteMenuItem(item.id)}
-                          title="Delete Dish"
-                        >
-                          <Trash2 size={15} />
-                        </button>
                       </div>
-                    ))}
+
+                      <div className="merchant-input-group">
+                        <label>Description / Ingredients</label>
+                        <input
+                          type="text"
+                          placeholder="Short description of the dish..."
+                          value={newDishDesc}
+                          onChange={(e) => setNewDishDesc(e.target.value)}
+                          className="merchant-text-input"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="auth-submit-btn"
+                        disabled={addingDish}
+                      >
+                        <Plus size={15} />{" "}
+                        {addingDish ? "Uploading Dish..." : "Add Dish to Menu"}
+                      </button>
+                    </form>
+
+                    {/* Existing Menu Items List with Inline Edit Toggle & Delete */}
+                    {merchantMenuItems.length > 0 && (
+                      <div className="merchant-menu-list">
+                        {merchantMenuItems.map((item) => (
+                          <div key={item.id}>
+                            <div className="merchant-menu-item-row">
+                              <div className="merchant-menu-item-info">
+                                {item.image_url && (
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    className="merchant-menu-thumb"
+                                  />
+                                )}
+                                <div className="merchant-menu-text">
+                                  <div className="merchant-menu-name">
+                                    {item.name}
+                                  </div>
+                                  <div className="merchant-menu-meta">
+                                    ₱{Number(item.price).toFixed(2)} •{" "}
+                                    {item.special_tag}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="merchant-item-actions">
+                                <button
+                                  type="button"
+                                  className="merchant-icon-btn edit"
+                                  onClick={() => handleStartEditDish(item)}
+                                  title="Edit Dish"
+                                >
+                                  <Edit3 size={15} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="merchant-icon-btn"
+                                  onClick={() => handleDeleteMenuItem(item.id)}
+                                  title="Delete Dish"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Inline Edit Dish Form */}
+                            {editingDishId === item.id && (
+                              <div className="merchant-edit-dish-box">
+                                <div className="merchant-row-2col">
+                                  <div className="merchant-input-group">
+                                    <label>Dish Name</label>
+                                    <input
+                                      type="text"
+                                      value={editDishForm.name}
+                                      onChange={(e) =>
+                                        setEditDishForm({
+                                          ...editDishForm,
+                                          name: e.target.value,
+                                        })
+                                      }
+                                      className="merchant-text-input"
+                                    />
+                                  </div>
+                                  <div className="merchant-input-group">
+                                    <label>Price (₱)</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      value={editDishForm.price}
+                                      onChange={(e) =>
+                                        setEditDishForm({
+                                          ...editDishForm,
+                                          price: e.target.value,
+                                        })
+                                      }
+                                      className="merchant-text-input"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="merchant-row-2col">
+                                  <div className="merchant-input-group">
+                                    <label>Special Tag</label>
+                                    <select
+                                      value={editDishForm.special_tag}
+                                      onChange={(e) =>
+                                        setEditDishForm({
+                                          ...editDishForm,
+                                          special_tag: e.target.value,
+                                        })
+                                      }
+                                      className="merchant-select-input"
+                                    >
+                                      <option value="None">None</option>
+                                      <option value="Best Seller">
+                                        Best Seller
+                                      </option>
+                                      <option value="New Arrivals">
+                                        New Arrivals
+                                      </option>
+                                      <option value="Special Offer">
+                                        Special Offer
+                                      </option>
+                                    </select>
+                                  </div>
+
+                                  <div className="merchant-input-group">
+                                    <label>Replace Photo</label>
+                                    <div className="merchant-file-upload-row">
+                                      <label className="merchant-file-label-btn">
+                                        <Upload size={13} />
+                                        <span>
+                                          {editDishImageFile
+                                            ? "Selected"
+                                            : "New Photo"}
+                                        </span>
+                                        <input
+                                          type="file"
+                                          accept="image/*"
+                                          className="merchant-file-input-hidden"
+                                          onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                              setEditDishImageFile(file);
+                                              setEditDishImagePreview(
+                                                URL.createObjectURL(file),
+                                              );
+                                            }
+                                          }}
+                                        />
+                                      </label>
+                                      {editDishImagePreview && (
+                                        <img
+                                          src={editDishImagePreview}
+                                          alt="Edit dish preview"
+                                          className="merchant-upload-preview-thumb"
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="merchant-input-group">
+                                  <label>Description / Ingredients</label>
+                                  <input
+                                    type="text"
+                                    value={editDishForm.description}
+                                    onChange={(e) =>
+                                      setEditDishForm({
+                                        ...editDishForm,
+                                        description: e.target.value,
+                                      })
+                                    }
+                                    className="merchant-text-input"
+                                  />
+                                </div>
+
+                                <div className="merchant-edit-actions">
+                                  <button
+                                    type="button"
+                                    className="merchant-save-sm-btn"
+                                    disabled={savingDishEdit}
+                                    onClick={() => handleSaveEditDish(item.id)}
+                                  >
+                                    {savingDishEdit
+                                      ? "Saving..."
+                                      : "Save Dish Changes"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="merchant-cancel-sm-btn"
+                                    onClick={() => setEditingDishId(null)}
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
 
-              {/* 4. Storefront Settings Form (Direct Image File Uploads) */}
-              <div className="merchant-manager-card">
-                <h5 className="merchant-manager-title">
-                  <span>
-                    <Store size={15} /> Storefront Settings (
-                    {editingBusiness?.name})
-                  </span>
-                </h5>
-
-                {updateStatus && (
-                  <div
-                    className={`merchant-status-msg ${
-                      updateStatus.includes("Error") ? "error" : "success"
-                    }`}
-                  >
-                    {updateStatus}
-                  </div>
-                )}
-
-                <form
-                  onSubmit={handleUpdateStorefront}
-                  className="merchant-form-stack"
+                {/* Dropdown 2: Storefront Settings */}
+                <div
+                  className="profile-list-row"
+                  onClick={() =>
+                    setActiveBizSettingRow(
+                      activeBizSettingRow === "storefront"
+                        ? null
+                        : "storefront",
+                    )
+                  }
                 >
-                  <div className="merchant-input-group">
-                    <label>Business Profile Image (Avatar)</label>
-                    <div className="merchant-file-upload-row">
-                      <label className="merchant-file-label-btn">
-                        <Upload size={14} />
-                        <span>
-                          {profileImageFile
-                            ? profileImageFile.name
-                            : "Upload Profile Image"}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="merchant-file-input-hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setProfileImageFile(file);
-                              setProfileImagePreview(URL.createObjectURL(file));
+                  <div className="profile-list-row-left">
+                    <Store size={18} />
+                    <span>Storefront Settings</span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    color="var(--text-secondary)"
+                    className={
+                      activeBizSettingRow === "storefront"
+                        ? "chevron-rotated"
+                        : ""
+                    }
+                  />
+                </div>
+
+                {activeBizSettingRow === "storefront" && (
+                  <div className="profile-list-drawer">
+                    {updateStatus && (
+                      <div
+                        className={`merchant-status-msg ${
+                          updateStatus.includes("Error") ? "error" : "success"
+                        }`}
+                      >
+                        {updateStatus}
+                      </div>
+                    )}
+
+                    <form
+                      onSubmit={handleUpdateStorefront}
+                      className="merchant-form-stack"
+                    >
+                      <div className="merchant-input-group">
+                        <label>Business Profile Image (Avatar)</label>
+                        <div className="merchant-file-upload-row">
+                          <label className="merchant-file-label-btn">
+                            <Upload size={14} />
+                            <span>
+                              {profileImageFile
+                                ? profileImageFile.name
+                                : "Upload Profile Image"}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="merchant-file-input-hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setProfileImageFile(file);
+                                  setProfileImagePreview(
+                                    URL.createObjectURL(file),
+                                  );
+                                }
+                              }}
+                            />
+                          </label>
+                          {profileImagePreview && (
+                            <img
+                              src={profileImagePreview}
+                              alt="Profile preview"
+                              className="merchant-upload-preview-thumb"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="merchant-input-group">
+                        <label>Cover Banner Photo</label>
+                        <div className="merchant-file-upload-row">
+                          <label className="merchant-file-label-btn">
+                            <Upload size={14} />
+                            <span>
+                              {coverImageFile
+                                ? coverImageFile.name
+                                : "Upload Cover Banner"}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="merchant-file-input-hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setCoverImageFile(file);
+                                  setCoverImagePreview(
+                                    URL.createObjectURL(file),
+                                  );
+                                }
+                              }}
+                            />
+                          </label>
+                          {coverImagePreview && (
+                            <img
+                              src={coverImagePreview}
+                              alt="Cover preview"
+                              className="merchant-upload-preview-banner"
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="merchant-row-2col">
+                        <div className="merchant-input-group">
+                          <label>Opening Time</label>
+                          <input
+                            type="time"
+                            value={editingBusiness?.open_time || "08:00"}
+                            onChange={(e) =>
+                              setEditingBusiness({
+                                ...editingBusiness,
+                                open_time: e.target.value,
+                              })
                             }
-                          }}
-                        />
-                      </label>
-                      {/* {profileImagePreview && (
-                        <img
-                          src={profileImagePreview}
-                          alt="Profile preview"
-                          className="merchant-upload-preview-thumb"
-                        />
-                      )} */}
-                    </div>
-                  </div>
-
-                  <div className="merchant-input-group">
-                    <label>Cover Banner Photo</label>
-                    <div className="merchant-file-upload-row">
-                      <label className="merchant-file-label-btn">
-                        <Upload size={14} />
-                        <span>
-                          {coverImageFile
-                            ? coverImageFile.name
-                            : "Upload Cover Banner"}
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="merchant-file-input-hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setCoverImageFile(file);
-                              setCoverImagePreview(URL.createObjectURL(file));
+                            className="merchant-text-input"
+                          />
+                        </div>
+                        <div className="merchant-input-group">
+                          <label>Closing Time</label>
+                          <input
+                            type="time"
+                            value={editingBusiness?.close_time || "21:00"}
+                            onChange={(e) =>
+                              setEditingBusiness({
+                                ...editingBusiness,
+                                close_time: e.target.value,
+                              })
                             }
-                          }}
-                        />
-                      </label>
-                      {/* {coverImagePreview && (
-                        <img
-                          src={coverImagePreview}
-                          alt="Cover preview"
-                          className="merchant-upload-preview-banner"
-                        />
-                      )} */}
-                    </div>
-                  </div>
+                            className="merchant-text-input"
+                          />
+                        </div>
+                      </div>
 
-                  <div className="merchant-row-2col">
-                    <div className="merchant-input-group">
-                      <label>Opening Time</label>
-                      <input
-                        type="time"
-                        value={editingBusiness?.open_time || "08:00"}
-                        onChange={(e) =>
-                          setEditingBusiness({
-                            ...editingBusiness,
-                            open_time: e.target.value,
-                          })
-                        }
-                        className="merchant-text-input"
-                      />
-                    </div>
-                    <div className="merchant-input-group">
-                      <label>Closing Time</label>
-                      <input
-                        type="time"
-                        value={editingBusiness?.close_time || "21:00"}
-                        onChange={(e) =>
-                          setEditingBusiness({
-                            ...editingBusiness,
-                            close_time: e.target.value,
-                          })
-                        }
-                        className="merchant-text-input"
-                      />
-                    </div>
-                  </div>
+                      <div className="merchant-input-group">
+                        <label>Active Voucher / Promo Text</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 10% off on total order for students!"
+                          value={editingBusiness?.promo || ""}
+                          onChange={(e) =>
+                            setEditingBusiness({
+                              ...editingBusiness,
+                              promo: e.target.value,
+                            })
+                          }
+                          className="merchant-text-input"
+                        />
+                      </div>
 
-                  <button
-                    type="submit"
-                    className="auth-submit-btn"
-                    disabled={uploadingStorefront}
-                  >
-                    {uploadingStorefront
-                      ? "Uploading & Saving..."
-                      : "Save Storefront Changes"}
-                  </button>
-                </form>
+                      <div className="merchant-input-group">
+                        <label>Establishment Description</label>
+                        <input
+                          type="text"
+                          placeholder="Tell customers about your specialties & ambiance..."
+                          value={editingBusiness?.description || ""}
+                          onChange={(e) =>
+                            setEditingBusiness({
+                              ...editingBusiness,
+                              description: e.target.value,
+                            })
+                          }
+                          className="merchant-text-input"
+                        />
+                      </div>
+
+                      <div className="merchant-input-group">
+                        <label>Contact Number</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 0917-XXX-XXXX"
+                          value={editingBusiness?.contact_number || ""}
+                          onChange={(e) =>
+                            setEditingBusiness({
+                              ...editingBusiness,
+                              contact_number: e.target.value,
+                            })
+                          }
+                          className="merchant-text-input"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="auth-submit-btn"
+                        disabled={uploadingStorefront}
+                      >
+                        {uploadingStorefront
+                          ? "Uploading & Saving..."
+                          : "Save Storefront Changes"}
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {/* Dropdown 3: Establishment Gallery (Upload or Remove Photos) */}
+                <div
+                  className="profile-list-row"
+                  onClick={() =>
+                    setActiveBizSettingRow(
+                      activeBizSettingRow === "gallery" ? null : "gallery",
+                    )
+                  }
+                >
+                  <div className="profile-list-row-left">
+                    <ImageIcon size={18} />
+                    <span>
+                      Establishment Gallery ({currentGalleryList.length})
+                    </span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    color="var(--text-secondary)"
+                    className={
+                      activeBizSettingRow === "gallery" ? "chevron-rotated" : ""
+                    }
+                  />
+                </div>
+
+                {activeBizSettingRow === "gallery" && (
+                  <div className="profile-list-drawer">
+                    {galleryStatusMsg && (
+                      <div
+                        className={`merchant-status-msg ${
+                          galleryStatusMsg.includes("Error")
+                            ? "error"
+                            : "success"
+                        }`}
+                      >
+                        {galleryStatusMsg}
+                      </div>
+                    )}
+
+                    <form
+                      onSubmit={handleUploadGalleryPhotos}
+                      className="merchant-form-stack"
+                    >
+                      <div className="merchant-input-group">
+                        <label>Add New Establishment Photos</label>
+                        <div className="merchant-file-upload-row">
+                          <label className="merchant-file-label-btn">
+                            <Upload size={14} />
+                            <span>
+                              {newGalleryFiles.length > 0
+                                ? `${newGalleryFiles.length} file(s) selected`
+                                : "Select Gallery Photos"}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              className="merchant-file-input-hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (files.length > 0) {
+                                  setNewGalleryFiles((prev) => [
+                                    ...prev,
+                                    ...files,
+                                  ]);
+                                }
+                              }}
+                            />
+                          </label>
+                          {newGalleryFiles.length > 0 && (
+                            <button
+                              type="button"
+                              className="merchant-icon-btn"
+                              onClick={() => setNewGalleryFiles([])}
+                              title="Clear selection"
+                            >
+                              <X size={15} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {newGalleryFiles.length > 0 && (
+                        <button
+                          type="submit"
+                          className="auth-submit-btn"
+                          disabled={galleryUploading}
+                        >
+                          <Plus size={15} />{" "}
+                          {galleryUploading
+                            ? "Uploading Photos..."
+                            : `Upload ${newGalleryFiles.length} Photo(s) to Gallery`}
+                        </button>
+                      )}
+                    </form>
+
+                    {/* Current Gallery Photos Grid with Remove Button */}
+                    {currentGalleryList.length === 0 ? (
+                      <p className="profile-drawer-empty">
+                        No photos in your establishment gallery yet.
+                      </p>
+                    ) : (
+                      <div className="merchant-gallery-grid">
+                        {currentGalleryList.map((imgUrl, idx) => (
+                          <div
+                            key={idx}
+                            className="merchant-gallery-thumb-card"
+                          >
+                            <img
+                              src={imgUrl}
+                              alt={`Establishment gallery ${idx + 1}`}
+                            />
+                            <button
+                              type="button"
+                              className="merchant-gallery-delete-btn"
+                              onClick={() => handleRemoveGalleryPhoto(imgUrl)}
+                              title="Remove photo from gallery"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* 5. Unregister Business (With Warning & Verification) */}
+              {/* 4. Separate Unregister Business Danger Card */}
               <div className="unregister-danger-card">
                 <h5 className="unregister-danger-title">
                   <AlertTriangle size={15} /> Unregister Business

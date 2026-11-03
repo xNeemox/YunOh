@@ -1,24 +1,55 @@
 import React, { useState, useEffect } from "react";
-import { Search, Star, MapPin, Sparkles, Database, Heart } from "lucide-react";
+import {
+  Search,
+  Star,
+  MapPin,
+  Sparkles,
+  Database,
+  Heart,
+  Clock,
+} from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./DiscoverView.css";
+
+const BAYOMBONG_CENTER = { lat: 16.4815, lng: 121.1497 };
+
+// Standard YunOh categories synced with Business Registration & HomeView
+const STANDARD_CATEGORIES = [
+  "Local Delicacy",
+  "Panciterias",
+  "Cafe & Coffee",
+  "Korean",
+  "Japanese",
+  "Tapsilogan",
+  "Fine Dining",
+  "Grill / Casual",
+  "Bakery & Pastries",
+];
 
 export default function DiscoverView({
   favorites,
   toggleFavorite,
   onSelectRestaurant,
+  onSelectBusinessProfile,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedBarangay, setSelectedBarangay] = useState("All");
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [userCoords, setUserCoords] = useState(BAYOMBONG_CENTER);
 
   useEffect(() => {
     async function fetchRestaurants() {
       try {
-        const { data, error } = await supabase.from("restaurants").select("*");
+        // Join public.reviews(rating) so star rating & review count are 100% dynamic
+        const { data, error } = await supabase
+          .from("businesses")
+          .select("*, reviews(rating)");
 
         if (error) {
-          console.error("Error fetching restaurants:", error.message);
+          console.error("Error fetching businesses:", error.message);
         } else if (data) {
           setRestaurants(data);
         }
@@ -30,25 +61,149 @@ export default function DiscoverView({
     }
 
     fetchRestaurants();
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserCoords({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
+        },
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000 },
+      );
+    }
   }, []);
 
-  const filteredRestaurants = restaurants.filter(
-    (item) =>
-      item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // --- HELPER 1: Parse Multiple Categories ---
+  const parseCategories = (catData) => {
+    if (!catData) return ["Local Spot"];
+    if (Array.isArray(catData)) return catData.filter(Boolean);
+    return catData
+      .split(",")
+      .map((c) => c.trim())
+      .filter(Boolean);
+  };
+
+  // --- HELPER 2: Extract Barangay ---
+  const getSpotBarangay = (spot) => {
+    if (spot.barangay && spot.barangay.trim() !== "") {
+      return spot.barangay.trim();
+    }
+    if (spot.address) {
+      const parts = spot.address.split(",").map((p) => p.trim());
+      if (parts.length >= 3) return parts[1];
+      if (parts.length === 2) return parts[0];
+    }
+    return "Poblacion";
+  };
+
+  // --- HELPER 3: Check Is Open Now ---
+  const checkIsCurrentlyOpen = (openStr, closeStr) => {
+    if (!openStr || !closeStr) return true;
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+
+    const [openH, openM] = openStr.split(":").map(Number);
+    const [closeH, closeM] = closeStr.split(":").map(Number);
+
+    const openMins = openH * 60 + (openM || 0);
+    const closeMins = closeH * 60 + (closeM || 0);
+
+    return currentMins >= openMins && currentMins <= closeMins;
+  };
+
+  // --- HELPER 4: Dynamic Distance Calculation (Haversine formula in km) ---
+  const getDynamicDistance = (spot) => {
+    const lat = Number(spot.latitude);
+    const lng = Number(spot.longitude);
+
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      return spot.distance || "1.5 km";
+    }
+
+    const toRad = (val) => (val * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(lat - userCoords.lat);
+    const dLng = toRad(lng - userCoords.lng);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(userCoords.lat)) *
+        Math.cos(toRad(lat)) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return `${(R * c).toFixed(1)} km`;
+  };
+
+  // --- HELPER 5: Dynamic Star Rating & Review Count from public.reviews ---
+  const getDynamicRatingInfo = (spot) => {
+    if (Array.isArray(spot.reviews)) {
+      const count = spot.reviews.length;
+      if (count === 0) {
+        return { avg: "New", countText: "(0)" };
+      }
+      const sum = spot.reviews.reduce(
+        (acc, rev) => acc + (Number(rev.rating) || 0),
+        0,
+      );
+      const avg = (sum / count).toFixed(1);
+      return { avg, countText: `(${count})` };
+    }
+    return {
+      avg: spot.rating || 4.8,
+      countText: `(${spot.reviews || 50}+)`,
+    };
+  };
+
+  // Build Dynamic Category Filter List combining Standard Categories + any custom DB categories
+  const dynamicCategories = [
+    "All",
+    ...Array.from(
+      new Set([
+        ...STANDARD_CATEGORIES,
+        ...restaurants.flatMap((spot) => parseCategories(spot.category)),
+      ]),
+    ),
+  ];
+
+  // Build Dynamic Barangay Filter List from existing businesses
+  const dynamicBarangays = [
+    "All",
+    ...Array.from(new Set(restaurants.map((spot) => getSpotBarangay(spot)))),
+  ];
+
+  // Filter restaurants by Search, Category, and Barangay
+  const filteredRestaurants = restaurants.filter((item) => {
+    const itemCategories = parseCategories(item.category);
+    const itemBarangay = getSpotBarangay(item);
+    const q = searchQuery.toLowerCase();
+
+    const matchesSearch =
+      item.name?.toLowerCase().includes(q) ||
+      itemCategories.some((c) => c.toLowerCase().includes(q)) ||
+      itemBarangay.toLowerCase().includes(q);
+
+    const matchesCategory =
+      selectedCategory === "All" ||
+      itemCategories.some(
+        (c) => c.toLowerCase() === selectedCategory.toLowerCase(),
+      );
+
+    const matchesBarangay =
+      selectedBarangay === "All" || itemBarangay === selectedBarangay;
+
+    return matchesSearch && matchesCategory && matchesBarangay;
+  });
 
   return (
     <div className="discover-view">
       <div className="welcome-banner">
-        <h3>Discover Database 🧭</h3>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            fontSize: "0.9rem",
-            margin: "4px 0 16px 0",
-          }}
-        >
+        <h3>Discover</h3>
+        <p className="discover-subtitle-muted">
           Browsing live dining establishments stored in Supabase.
         </p>
 
@@ -56,7 +211,7 @@ export default function DiscoverView({
           <Search size={18} color="var(--text-secondary)" />
           <input
             type="text"
-            placeholder="Search database tables..."
+            placeholder="Search restaurants, barangay, categories..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="search-input"
@@ -64,26 +219,43 @@ export default function DiscoverView({
         </div>
       </div>
 
-      <div className="restaurant-list">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h4
-            style={{
-              margin: "8px 0",
-              fontSize: "1rem",
-              color: "var(--text-primary)",
-            }}
+      {/* Dynamic Category Scroll */}
+      <div className="discover-category-scroll">
+        {dynamicCategories.map((category) => (
+          <button
+            key={category}
+            className={`category-chip ${
+              selectedCategory === category ? "active" : ""
+            }`}
+            onClick={() => setSelectedCategory(category)}
           >
-            Live Supabase Feed
-          </h4>
-          <span className="supabase-badge">
-            <Database size={12} /> Connected
-          </span>
+            {category}
+          </button>
+        ))}
+      </div>
+
+      {/* Dynamic Town Barangay Filter */}
+      <div className="discover-barangay-filter-row">
+        <span className="discover-barangay-label">
+          <MapPin size={14} /> Filter by Barangay:
+        </span>
+        <select
+          className="discover-barangay-select"
+          value={selectedBarangay}
+          onChange={(e) => setSelectedBarangay(e.target.value)}
+        >
+          {dynamicBarangays.map((brgy) => (
+            <option key={brgy} value={brgy}>
+              {brgy === "All" ? "All Barangays (Bayombong)" : `Brgy. ${brgy}`}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="restaurant-list">
+        <div className="discover-feed-header-row">
+          <h4 className="discover-section-title">Place you might like</h4>
+          <span className="supabase-badge"></span>
         </div>
 
         {loading ? (
@@ -94,85 +266,132 @@ export default function DiscoverView({
           </p>
         ) : (
           filteredRestaurants.map((spot) => {
-            const spotId = spot.id || spot.restaurant_id;
-            const spotName = spot.name || spot.restaurant_name;
-            const spotCategory = spot.category || "Local Dining";
-            const spotRating = spot.rating || 4.5;
-            const spotReviews = spot.reviews || spot.review_count || 50;
-            const spotDistance = spot.distance || "1.0 km";
-            const spotPromo =
-              spot.promo || spot.description || "Special local discount";
-            const spotColor = spot.imageColor || spot.color || "#B8543A";
-            const spotAddress = spot.address || "Delfin Albano, Isabela";
-            const spotOpenTime = spot.open_time || "08:00";
-            const spotCloseTime = spot.close_time || "21:00";
-
-            const formattedSpot = {
-              id: spotId,
-              name: spotName,
-              category: spotCategory,
-              rating: spotRating,
-              reviews: spotReviews,
-              distance: spotDistance,
-              promo: spotPromo,
-              imageColor: spotColor,
-              address: spotAddress,
-              open_time: spotOpenTime,
-              close_time: spotCloseTime,
-            };
-
-            const isFavorited = favorites.some((fav) => fav.id === spotId);
+            const isFavorited = favorites.some((fav) => fav.id === spot.id);
+            const isOpenNow = checkIsCurrentlyOpen(
+              spot.open_time,
+              spot.close_time,
+            );
+            const ratingInfo = getDynamicRatingInfo(spot);
+            const barangayName = getSpotBarangay(spot);
+            const distanceText = getDynamicDistance(spot);
+            const spotCategories = parseCategories(spot.category);
+            const visibleCategories = spotCategories.slice(0, 2);
+            const extraCategoryCount = spotCategories.length - 2;
+            const avatarUrl = spot.business_profile_image || spot.logo_url;
 
             return (
               <div
-                key={spotId}
-                className="restaurant-card"
-                onClick={() => onSelectRestaurant(formattedSpot)} // <--- Triggers Detail View on click
-                style={{ cursor: "pointer" }}
+                key={spot.id}
+                className="restaurant-card discover-card-clickable"
+                onClick={() => onSelectRestaurant(spot)}
               >
-                <div
-                  className="card-img-placeholder"
-                  style={{ backgroundColor: spotColor }}
-                >
-                  <span className="promo-badge">
-                    <Sparkles size={12} /> {spotPromo}
-                  </span>
+                <div className="card-img-placeholder">
+                  {spot.cover_image_url && (
+                    <img
+                      src={spot.cover_image_url}
+                      alt={`${spot.name} cover`}
+                      className="cover-img"
+                    />
+                  )}
+                  {spot.promo && (
+                    <span className="promo-badge">
+                      <Sparkles size={12} /> {spot.promo}
+                    </span>
+                  )}
                   <button
                     className={`fav-toggle-btn ${isFavorited ? "active" : ""}`}
                     onClick={(e) => {
-                      e.stopPropagation(); // Prevents card click when toggling favorite
-                      toggleFavorite(formattedSpot);
+                      e.stopPropagation();
+                      toggleFavorite(spot);
                     }}
                     aria-label="Toggle favorite"
                   >
                     <Heart
                       size={16}
-                      fill={isFavorited ? "var(--struct-secondary)" : "none"}
+                      fill={isFavorited ? "var(--heart-color)" : "none"}
                       color={
-                        isFavorited ? "var(--struct-secondary)" : "#FFFFFF"
+                        isFavorited ? "var(--heart-outline-color)" : "#FFFFFF"
                       }
                     />
                   </button>
                 </div>
 
                 <div className="card-body">
-                  <div className="card-header-row">
-                    <h4 className="spot-name">{spotName}</h4>
-                    <span className="spot-rating">
+                  <div className="card-header-row discover-card-header-row">
+                    {/* Circular Merchant Profile Avatar */}
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectBusinessProfile &&
+                          onSelectBusinessProfile(spot);
+                      }}
+                      title="View Business Profile & Gallery"
+                      className="discover-merchant-avatar"
+                    >
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={spot.name}
+                          className="discover-merchant-avatar-img"
+                        />
+                      ) : (
+                        <span className="discover-merchant-avatar-fallback">
+                          {spot.name ? spot.name.charAt(0) : "Y"}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="discover-merchant-name-wrap">
+                      <h4 className="spot-name discover-spot-name">
+                        {spot.name}
+                      </h4>
+                    </div>
+
+                    <span className="spot-rating discover-spot-rating">
                       <Star
                         size={14}
                         fill="var(--accent-color)"
                         color="var(--accent-color)"
                       />
-                      {spotRating} ({spotReviews})
+                      {ratingInfo.avg} {ratingInfo.countText}
                     </span>
                   </div>
 
-                  <div className="spot-meta">
-                    <span className="category-tag">{spotCategory}</span>
-                    <span className="spot-distance">
-                      <MapPin size={13} /> {spotDistance}
+                  {/* Multi-Category Tags & Open Status */}
+                  <div className="discover-meta-wrap">
+                    <div className="discover-category-group">
+                      {visibleCategories.map((cat, idx) => (
+                        <span key={idx} className="category-tag">
+                          {cat}
+                        </span>
+                      ))}
+                      {extraCategoryCount > 0 && (
+                        <span
+                          className="discover-category-more-badge"
+                          title={spotCategories.slice(2).join(", ")}
+                        >
+                          +{extraCategoryCount}
+                        </span>
+                      )}
+                    </div>
+
+                    <span
+                      className={`discover-status-pill ${
+                        isOpenNow ? "open" : "closed"
+                      }`}
+                    >
+                      <Clock size={11} />
+                      {isOpenNow ? "Open Now" : "Closed"}
                     </span>
+                  </div>
+
+                  {/* Barangay & Distance */}
+                  <div className="discover-location-row">
+                    <span className="discover-barangay-tag">
+                      <MapPin size={13} color="var(--accent-color)" /> Brgy.{" "}
+                      {barangayName}
+                    </span>
+                    <span className="spot-distance">{distanceText} away</span>
                   </div>
                 </div>
               </div>

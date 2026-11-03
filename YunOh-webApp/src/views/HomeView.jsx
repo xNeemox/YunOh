@@ -6,6 +6,19 @@ import "./HomeView.css";
 // Default fallback coordinates: Bayombong, Nueva Vizcaya Town Center
 const BAYOMBONG_CENTER = { lat: 16.4815, lng: 121.1497 };
 
+// Standard YunOh categories synced with Business Registration
+const STANDARD_CATEGORIES = [
+  "Local Delicacy",
+  "Panciterias",
+  "Cafe & Coffee",
+  "Korean",
+  "Japanese",
+  "Tapsilogan",
+  "Fine Dining",
+  "Grill / Casual",
+  "Bakery & Pastries",
+];
+
 export default function HomeView({
   favorites,
   toggleFavorite,
@@ -59,12 +72,12 @@ export default function HomeView({
     }
   };
 
-  // Fallback static mock list if no database items exist yet
+  // Fallback static mock list if no database items exist yet (menu_images removed)
   const fallbackRestaurants = [
     {
       id: 1,
       name: "Uncle Bob's Panciteria",
-      category: "Local Delicacy, Noodle House, lutong bahay",
+      category: "Panciterias, Local Delicacy",
       rating: 4.8,
       reviews: 124,
       distance: "1.2 km",
@@ -81,13 +94,12 @@ export default function HomeView({
       close_time: "21:00",
       business_profile_image: "",
       cover_image_url: "",
-      menu_images: [],
       gallery_images: [],
     },
     {
       id: 2,
       name: "Kape Indio Artisan Cafe",
-      category: "Cafe & Coffee, Pastries",
+      category: "Cafe & Coffee, Bakery & Pastries",
       rating: 4.9,
       reviews: 98,
       distance: "2.5 km",
@@ -104,13 +116,12 @@ export default function HomeView({
       close_time: "22:00",
       business_profile_image: "",
       cover_image_url: "",
-      menu_images: [],
       gallery_images: [],
     },
     {
       id: 3,
       name: "Bayombong Grill & BBQ",
-      category: "Grill / Casual",
+      category: "Grill / Casual, Tapsilogan",
       rating: 4.7,
       reviews: 210,
       distance: "3.1 km",
@@ -127,7 +138,6 @@ export default function HomeView({
       close_time: "23:00",
       business_profile_image: "",
       cover_image_url: "",
-      menu_images: [],
       gallery_images: [],
     },
   ];
@@ -146,7 +156,7 @@ export default function HomeView({
       .filter(Boolean);
   };
 
-  // --- HELPER 2: Extract Barangay fromspot.barangay column or fallback address ---
+  // --- HELPER 2: Extract Barangay from spot.barangay column or fallback address ---
   const getSpotBarangay = (spot) => {
     if (spot.barangay && spot.barangay.trim() !== "") {
       return spot.barangay.trim();
@@ -222,11 +232,14 @@ export default function HomeView({
     };
   };
 
-  // Build Dynamic Category Filter List from existing businesses
+  // Build Dynamic Category Filter List combining Standard Categories + any custom DB categories
   const dynamicCategories = [
     "All",
     ...Array.from(
-      new Set(restaurants.flatMap((spot) => parseCategories(spot.category))),
+      new Set([
+        ...STANDARD_CATEGORIES,
+        ...restaurants.flatMap((spot) => parseCategories(spot.category)),
+      ]),
     ),
   ];
 
@@ -248,7 +261,10 @@ export default function HomeView({
       itemBarangay.toLowerCase().includes(q);
 
     const matchesCategory =
-      selectedCategory === "All" || itemCategories.includes(selectedCategory);
+      selectedCategory === "All" ||
+      itemCategories.some(
+        (c) => c.toLowerCase() === selectedCategory.toLowerCase(),
+      );
 
     const matchesBarangay =
       selectedBarangay === "All" || itemBarangay === selectedBarangay;
@@ -335,6 +351,7 @@ export default function HomeView({
             const spotCategories = parseCategories(spot.category);
             const visibleCategories = spotCategories.slice(0, 2);
             const extraCategoryCount = spotCategories.length - 2;
+            const avatarUrl = spot.business_profile_image || spot.logo_url;
 
             return (
               <div
@@ -367,7 +384,9 @@ export default function HomeView({
                     <Heart
                       size={16}
                       fill={isFavorited ? "var(--heart-color)" : "none"}
-                      color="var(--heart-outline-color)"
+                      color={
+                        isFavorited ? "var(--heart-outline-color)" : "#FFFFFF"
+                      }
                     />
                   </button>
                 </div>
@@ -378,18 +397,15 @@ export default function HomeView({
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
-                        onSelectBusinessProfile(spot);
+                        onSelectBusinessProfile &&
+                          onSelectBusinessProfile(spot);
                       }}
                       title="View Business Profile"
                       className="merchant-avatar-circle"
-                      style={{
-                        backgroundColor:
-                          spot.imageColor || "var(--struct-secondary)",
-                      }}
                     >
-                      {spot.business_profile_image ? (
+                      {avatarUrl ? (
                         <img
-                          src={spot.business_profile_image}
+                          src={avatarUrl}
                           alt={spot.name}
                           className="merchant-avatar-img"
                         />
@@ -449,7 +465,7 @@ export default function HomeView({
                       <MapPin size={13} color="var(--accent-color)" /> Brgy.{" "}
                       {barangayName}
                     </span>
-                    <span className="spot-distance">{distanceText}</span>
+                    <span className="spot-distance">{distanceText} away</span>
                   </div>
                 </div>
               </div>
