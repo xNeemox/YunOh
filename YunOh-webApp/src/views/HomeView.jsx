@@ -3,10 +3,8 @@ import { Search, Star, MapPin, Sparkles, Heart, Clock } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./HomeView.css";
 
-// Default fallback coordinates: Bayombong, Nueva Vizcaya Town Center
 const BAYOMBONG_CENTER = { lat: 16.4815, lng: 121.1497 };
 
-// Standard YunOh categories synced with Business Registration
 const STANDARD_CATEGORIES = [
   "Local Delicacy",
   "Panciterias",
@@ -17,6 +15,7 @@ const STANDARD_CATEGORIES = [
   "Fine Dining",
   "Grill / Casual",
   "Bakery & Pastries",
+  "Desserts",
 ];
 
 export default function HomeView({
@@ -29,17 +28,14 @@ export default function HomeView({
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedBarangay, setSelectedBarangay] = useState("All");
 
-  // Supabase live businesses state
   const [supabaseBusinesses, setSupabaseBusinesses] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // User live GPS coordinates for dynamic distance calculation
   const [userCoords, setUserCoords] = useState(BAYOMBONG_CENTER);
 
   useEffect(() => {
     fetchLiveBusinesses();
 
-    // Request user's real-time location (falls back to Bayombong center if denied)
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -48,9 +44,7 @@ export default function HomeView({
             lng: pos.coords.longitude,
           });
         },
-        () => {
-          // Keep default Bayombong coordinates if permission is denied
-        },
+        () => {},
         { enableHighAccuracy: true, timeout: 5000 },
       );
     }
@@ -59,7 +53,6 @@ export default function HomeView({
   const fetchLiveBusinesses = async () => {
     setLoading(true);
     try {
-      // Strictly fetch ONLY Admin-verified businesses for the public Home feed
       const { data, error } = await supabase
         .from("businesses")
         .select("*, reviews(rating)")
@@ -74,7 +67,6 @@ export default function HomeView({
     }
   };
 
-  // Fallback static mock list if no database items exist yet (menu_images removed)
   const fallbackRestaurants = [
     {
       id: 1,
@@ -144,11 +136,8 @@ export default function HomeView({
     },
   ];
 
-  // Use Supabase data if available, otherwise fallback to mock data
   const restaurants =
     supabaseBusinesses.length > 0 ? supabaseBusinesses : fallbackRestaurants;
-
-  // --- HELPER 1: Parse Multiple Categories (supports comma-separated strings or arrays) ---
   const parseCategories = (catData) => {
     if (!catData) return ["Local Spot"];
     if (Array.isArray(catData)) return catData.filter(Boolean);
@@ -158,7 +147,6 @@ export default function HomeView({
       .filter(Boolean);
   };
 
-  // --- HELPER 2: Extract Barangay from spot.barangay column or fallback address ---
   const getSpotBarangay = (spot) => {
     if (spot.barangay && spot.barangay.trim() !== "") {
       return spot.barangay.trim();
@@ -171,7 +159,6 @@ export default function HomeView({
     return "Poblacion";
   };
 
-  // --- HELPER 3: Dynamic "Is Open" Status from open_time and close_time ---
   const checkIsCurrentlyOpen = (openStr, closeStr) => {
     if (!openStr || !closeStr) return true;
     const now = new Date();
@@ -186,7 +173,6 @@ export default function HomeView({
     return currentMins >= openMins && currentMins <= closeMins;
   };
 
-  // --- HELPER 4: Dynamic Distance Calculation (Haversine formula in km) ---
   const getDynamicDistance = (spot) => {
     const lat = Number(spot.latitude);
     const lng = Number(spot.longitude);
@@ -212,8 +198,6 @@ export default function HomeView({
 
     return `${distanceKm.toFixed(1)} km`;
   };
-
-  // --- HELPER 5: Dynamic Star Rating & Review Count from public.reviews ---
   const getDynamicRatingInfo = (spot) => {
     if (Array.isArray(spot.reviews)) {
       const count = spot.reviews.length;
@@ -227,14 +211,11 @@ export default function HomeView({
       const avg = (sum / count).toFixed(1);
       return { avg, countText: `(${count})` };
     }
-    // Fallback for static mock objects where spot.reviews is a number
     return {
       avg: spot.rating || 4.8,
       countText: `(${spot.reviews || 50}+)`,
     };
   };
-
-  // Build Dynamic Category Filter List combining Standard Categories + any custom DB categories
   const dynamicCategories = [
     "All",
     ...Array.from(
@@ -245,13 +226,11 @@ export default function HomeView({
     ),
   ];
 
-  // Build Dynamic Barangay Filter List from existing businesses
   const dynamicBarangays = [
     "All",
     ...Array.from(new Set(restaurants.map((spot) => getSpotBarangay(spot)))),
   ];
 
-  // Filter restaurants by Search, Category, and Barangay
   const filteredRestaurants = restaurants.filter((item) => {
     const itemCategories = parseCategories(item.category);
     const itemBarangay = getSpotBarangay(item);
@@ -349,7 +328,6 @@ export default function HomeView({
             const distanceText = getDynamicDistance(spot);
             const barangayName = getSpotBarangay(spot);
 
-            // Multi-category logic: render up to 2 categories, then "+N" if > 2
             const spotCategories = parseCategories(spot.category);
             const visibleCategories = spotCategories.slice(0, 2);
             const extraCategoryCount = spotCategories.length - 2;
@@ -421,8 +399,6 @@ export default function HomeView({
                     <div className="merchant-name-wrap">
                       <h4 className="spot-name margin-zero-cls">{spot.name}</h4>
                     </div>
-
-                    {/* Dynamic Rating & Review Count */}
                     <span className="spot-rating whitespace-nowrap-cls">
                       <Star
                         size={14}
@@ -433,7 +409,6 @@ export default function HomeView({
                     </span>
                   </div>
 
-                  {/* Dynamic Categories (up to 2 + '+N') & Dynamic Open/Closed Status */}
                   <div className="spot-meta spot-meta-wrap margin-top-sm">
                     <div className="category-tags-group">
                       {visibleCategories.map((cat, idx) => (
@@ -460,8 +435,6 @@ export default function HomeView({
                       {isOpenNow ? "Open Now" : "Closed"}
                     </span>
                   </div>
-
-                  {/* Dynamic Barangay & Live GPS Distance */}
                   <div className="spot-location-row">
                     <span className="barangay-tag">
                       <MapPin size={13} color="var(--accent-color)" /> Brgy.{" "}
