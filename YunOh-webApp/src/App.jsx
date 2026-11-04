@@ -26,10 +26,8 @@ export default function App() {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [selectedBusinessProfile, setSelectedBusinessProfile] = useState(null);
 
-  // Full-page Business Registration view state
   const [isBusinessRegOpen, setIsBusinessRegOpen] = useState(false);
 
-  // Helper function to fetch role from profiles table
   const fetchUserRole = async (userId) => {
     const { data, error } = await supabase
       .from("profiles")
@@ -133,10 +131,8 @@ export default function App() {
               />
             )
           ) : userRole === "admin" ? (
-            /* --- FLEXIBLE MOBILE & DESKTOP ADMIN CONTROL CENTER --- */
             <AdminView onSignOut={handleSignOut} />
           ) : isBusinessRegOpen ? (
-            /* --- DEDICATED BUSINESS REGISTRATION PAGE --- */
             <BusinessRegistrationModal
               isOpen={isBusinessRegOpen}
               session={session}

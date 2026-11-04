@@ -141,7 +141,6 @@ export default function BusinessRegistrationModal({
     setErrorMsg("");
     setSuccessMsg("");
 
-    // Fallback check in case session prop wasn't passed down
     let activeUserId = session?.user?.id;
     if (!activeUserId) {
       const { data: authData } = await supabase.auth.getUser();
@@ -163,6 +162,34 @@ export default function BusinessRegistrationModal({
     if (credentialFiles.length < 3) {
       setErrorMsg(
         `Please upload at least 3 business credential documents (currently attached: ${credentialFiles.length}/3).`,
+      );
+      return;
+    }
+
+    // Validate & Auto-Correct Swapped Latitude / Longitude
+    let parsedLat = parseFloat(latitude);
+    let parsedLng = parseFloat(longitude);
+
+    if (isNaN(parsedLat) || isNaN(parsedLng)) {
+      setErrorMsg("Please enter valid numeric Latitude and Longitude values.");
+      return;
+    }
+
+    // If user accidentally typed Longitude (e.g. 121.14) into Latitude and Latitude (16.48) into Longitude, swap them!
+    if (Math.abs(parsedLat) > 90 && Math.abs(parsedLng) <= 90) {
+      const temp = parsedLat;
+      parsedLat = parsedLng;
+      parsedLng = temp;
+    }
+
+    if (
+      parsedLat < -90 ||
+      parsedLat > 90 ||
+      parsedLng < -180 ||
+      parsedLng > 180
+    ) {
+      setErrorMsg(
+        "Latitude must be between -90 and 90 (e.g. 16.4815) and Longitude between -180 and 180 (e.g. 121.1497).",
       );
       return;
     }
@@ -208,7 +235,10 @@ export default function BusinessRegistrationModal({
 
       const categoryString = selectedCategories.join(", ");
 
-      // 5. Insert Business Record into public.businesses (is_verified: false -> appears in Admin Pending tab!)
+      // 5. Purge any leftover/withdrawn registration for this owner so no duplicate rows conflict
+      await supabase.from("businesses").delete().eq("owner_id", activeUserId);
+
+      // 6. Insert Fresh Business Record into public.businesses
       const { data: insertedBiz, error: insertError } = await supabase
         .from("businesses")
         .insert([
@@ -222,8 +252,8 @@ export default function BusinessRegistrationModal({
             municipality: municipality.trim(),
             province: province.trim(),
             address: fullAddress,
-            latitude: Number(latitude),
-            longitude: Number(longitude),
+            latitude: parsedLat,
+            longitude: parsedLng,
             contact_number: contactNumber.trim() || null,
             social_link: socialLink.trim() || null,
             open_time: openTime,
@@ -240,7 +270,7 @@ export default function BusinessRegistrationModal({
 
       if (insertError) throw insertError;
 
-      // 6. Update User Role to 'owner' in public.profiles (unless user is already admin)
+      // 7. Update User Role to 'owner' in public.profiles (unless user is already admin)
       await supabase
         .from("profiles")
         .update({ role: "owner" })
@@ -248,13 +278,13 @@ export default function BusinessRegistrationModal({
         .neq("role", "admin");
 
       setSuccessMsg(
-        "Establishment submitted! Your registration is now pending in the Admin Control Center.",
+        "Establishment submitted! Approve it in the Admin Control Center to publish it on Home & Discover.",
       );
 
       setTimeout(() => {
         if (onSubmitSuccess) onSubmitSuccess(insertedBiz);
         onClose();
-      }, 1400);
+      }, 1300);
     } catch (err) {
       console.error("Business Registration Error:", err);
       setErrorMsg(err.message || "Failed to register business.");
@@ -262,7 +292,6 @@ export default function BusinessRegistrationModal({
       setSubmitting(false);
     }
   };
-
   return (
     <div className="biz-reg-page">
       {/* Top Page Navigation */}

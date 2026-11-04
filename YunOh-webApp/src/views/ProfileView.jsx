@@ -104,6 +104,10 @@ export default function ProfileView({
   const [showUnregisterConfirm, setShowUnregisterConfirm] = useState(false);
   const [unregisterConfirmText, setUnregisterConfirmText] = useState("");
   const [unregisterLoading, setUnregisterLoading] = useState(false);
+  const [checkingApproval, setCheckingApproval] = useState(false);
+  const [approvalFeedbackMsg, setApprovalFeedbackMsg] = useState("");
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [withdrawingApp, setWithdrawingApp] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
@@ -211,6 +215,30 @@ export default function ProfileView({
     }
   };
 
+  const handleCheckApprovalStatus = async () => {
+    setCheckingApproval(true);
+    setApprovalFeedbackMsg("Checking live approval status from Supabase...");
+
+    const latestBiz = await fetchOwnedBusinesses();
+    const timeStr = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    setCheckingApproval(false);
+
+    if (!latestBiz) {
+      setApprovalFeedbackMsg("No active business registration found.");
+    } else if (latestBiz.is_verified) {
+      setApprovalFeedbackMsg("Approved! Unlocking your merchant tools...");
+    } else {
+      setApprovalFeedbackMsg(
+        `Still pending Admin review (Last checked at ${timeStr}).`,
+      );
+    }
+  };
+
   const fetchMerchantDetails = async (businessId) => {
     const { data: revs } = await supabase
       .from("reviews")
@@ -254,19 +282,21 @@ export default function ProfileView({
 
   // Withdraw Pending Application (If still unverified)
   const handleWithdrawPendingApplication = async () => {
-    if (!editingBusiness) return;
-    const confirmed = window.confirm(
-      `Withdraw your registration request for "${editingBusiness.name}"?`,
-    );
-    if (!confirmed) return;
+    if (!session?.user?.id) return;
+    setWithdrawingApp(true);
 
     const { error } = await supabase
       .from("businesses")
       .delete()
-      .eq("id", editingBusiness.id)
       .eq("owner_id", session.user.id);
 
-    if (!error) {
+    setWithdrawingApp(false);
+
+    if (error) {
+      setApprovalFeedbackMsg(`Error withdrawing: ${error.message}`);
+    } else {
+      setShowWithdrawConfirm(false);
+      setApprovalFeedbackMsg("");
       setOwnedBusinesses([]);
       setEditingBusiness(null);
     }
@@ -905,6 +935,10 @@ export default function ProfileView({
                     `Brgy. ${editingBusiness.barangay}, Bayombong`}
                 </div>
                 <div>
+                  <strong>Coordinates:</strong> {editingBusiness.latitude},{" "}
+                  {editingBusiness.longitude}
+                </div>
+                <div>
                   <strong>Credentials Attached:</strong>{" "}
                   {Array.isArray(editingBusiness.credentials_images)
                     ? editingBusiness.credentials_images.length
@@ -913,22 +947,61 @@ export default function ProfileView({
                 </div>
               </div>
 
-              <div className="merchant-pending-actions">
-                <button
-                  type="button"
-                  onClick={fetchOwnedBusinesses}
-                  className="merchant-refresh-status-btn"
+              {approvalFeedbackMsg && (
+                <div
+                  className={`merchant-approval-feedback ${
+                    editingBusiness.is_verified ? "approved" : ""
+                  }`}
                 >
-                  Check Approval Status
-                </button>
-                <button
-                  type="button"
-                  onClick={handleWithdrawPendingApplication}
-                  className="merchant-cancel-app-btn"
-                >
-                  Withdraw
-                </button>
-              </div>
+                  {approvalFeedbackMsg}
+                </div>
+              )}
+
+              {!showWithdrawConfirm ? (
+                <div className="merchant-pending-actions">
+                  <button
+                    type="button"
+                    onClick={handleCheckApprovalStatus}
+                    disabled={checkingApproval}
+                    className="merchant-refresh-status-btn"
+                  >
+                    {checkingApproval
+                      ? "Checking Status..."
+                      : "Check Approval Status"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowWithdrawConfirm(true)}
+                    className="merchant-cancel-app-btn"
+                  >
+                    Withdraw
+                  </button>
+                </div>
+              ) : (
+                <div className="merchant-withdraw-confirm-box">
+                  <p className="merchant-withdraw-confirm-text">
+                    Withdraw "{editingBusiness.name}" and delete its pending
+                    registration?
+                  </p>
+                  <div className="merchant-pending-actions">
+                    <button
+                      type="button"
+                      onClick={handleWithdrawPendingApplication}
+                      disabled={withdrawingApp}
+                      className="unregister-confirm-btn"
+                    >
+                      {withdrawingApp ? "Withdrawing..." : "Yes, Withdraw Now"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowWithdrawConfirm(false)}
+                      className="unregister-cancel-btn"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* STATE 3: Admin Approved & Verified (is_verified === true) */

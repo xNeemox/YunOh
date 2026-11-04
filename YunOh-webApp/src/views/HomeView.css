@@ -86,7 +86,7 @@
 }
 
 .card-img-placeholder {
-  height: 120px;
+  height: 140px;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -106,7 +106,7 @@
 }
 
 .card-body {
-  padding: 12px 14px;
+  padding: 0px 14px 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 6px;

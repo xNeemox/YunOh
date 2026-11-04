@@ -8,6 +8,8 @@ import {
   AlertCircle,
   CheckCircle,
   Circle,
+  ShieldCheck,
+  X,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./AuthViews.css";
@@ -20,6 +22,10 @@ export default function RegisterView({ switchToLogin }) {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  // Option A: Post-Submit Terms & Conditions Modal State
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // --- Real-Time Password Strength Evaluation ---
   const pwdChecks = {
@@ -50,7 +56,8 @@ export default function RegisterView({ switchToLogin }) {
 
   const strengthMeta = getStrengthMeta();
 
-  const handleRegister = async (e) => {
+  // Step 1: Validate inputs & username uniqueness, then open Terms & Conditions Modal
+  const handleInitiateRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage("");
@@ -65,7 +72,12 @@ export default function RegisterView({ switchToLogin }) {
       return;
     }
 
-    // Enforce Decent-Strong Password Gate before calling Supabase
+    if (!cleanEmail) {
+      setErrorMessage("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
     if (!isPasswordAcceptable) {
       setErrorMessage(
         "Please create a stronger password (at least 8 characters with a mix of uppercase/lowercase letters, numbers, or symbols).",
@@ -74,20 +86,36 @@ export default function RegisterView({ switchToLogin }) {
       return;
     }
 
-    // 1. Pre-check if username is already taken in public.profiles
+    // Pre-check if username is already taken in public.profiles before showing Terms Modal
     const { data: existingUser } = await supabase
       .from("profiles")
       .select("id")
       .ilike("username", cleanUsername)
       .maybeSingle();
 
+    setLoading(false);
+
     if (existingUser) {
       setErrorMessage("That username is already taken. Please choose another.");
-      setLoading(false);
       return;
     }
 
-    // 2. Sign up user in Supabase Auth and pass metadata for the DB trigger
+    // Open Terms & Conditions Modal to finalize account creation
+    setAgreedToTerms(false);
+    setShowTermsModal(true);
+  };
+
+  // Step 2: Finalize Registration in Supabase after User Accepts Terms & Conditions
+  const handleConfirmTermsAndRegister = async () => {
+    if (!agreedToTerms) return;
+
+    setLoading(true);
+    setErrorMessage("");
+
+    const cleanUsername = username.trim();
+    const cleanEmail = email.trim();
+
+    // Sign up user in Supabase Auth and pass metadata for the DB trigger
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: cleanEmail,
       password,
@@ -101,6 +129,7 @@ export default function RegisterView({ switchToLogin }) {
     });
 
     if (authError) {
+      setShowTermsModal(false);
       setErrorMessage(authError.message);
       setLoading(false);
       return;
@@ -108,7 +137,7 @@ export default function RegisterView({ switchToLogin }) {
 
     const userId = authData.user?.id;
 
-    // 3. If an active session exists immediately, safely upsert profile row
+    // If an active session exists immediately, safely upsert profile row
     if (userId && authData.session) {
       const { error: profileError } = await supabase.from("profiles").upsert(
         [
@@ -124,13 +153,18 @@ export default function RegisterView({ switchToLogin }) {
       );
 
       if (profileError) {
+        setShowTermsModal(false);
         setErrorMessage(profileError.message);
         setLoading(false);
         return;
       }
     }
 
-    setSuccessMessage("Registration successful! You can now sign in.");
+    setShowTermsModal(false);
+    setAgreedToTerms(false);
+    setSuccessMessage(
+      "Terms accepted & registration successful! You can now sign in.",
+    );
     setUsername("");
     setEmail("");
     setPassword("");
@@ -160,7 +194,7 @@ export default function RegisterView({ switchToLogin }) {
         </div>
       )}
 
-      <form onSubmit={handleRegister} className="auth-penpot-form">
+      <form onSubmit={handleInitiateRegister} className="auth-penpot-form">
         <div className="penpot-input-group">
           <User size={18} className="penpot-input-icon" />
           <input
@@ -276,7 +310,7 @@ export default function RegisterView({ switchToLogin }) {
         )}
 
         <button type="submit" className="penpot-submit-btn" disabled={loading}>
-          {loading ? "Creating Account..." : "Sign Up"}
+          {loading ? "Validating..." : "Sign Up"}
         </button>
       </form>
 
@@ -286,6 +320,107 @@ export default function RegisterView({ switchToLogin }) {
           Sign in
         </button>
       </div>
+
+      {/* OPTION A: Post-Submit Terms & Conditions Modal */}
+      {showTermsModal && (
+        <div className="auth-terms-overlay">
+          <div className="auth-terms-modal">
+            <div className="auth-terms-header">
+              <div className="auth-terms-title-row">
+                <ShieldCheck size={18} color="var(--accent-color)" />
+                <h3>Terms & Conditions</h3>
+              </div>
+              <button
+                type="button"
+                className="auth-terms-close-btn"
+                onClick={() => setShowTermsModal(false)}
+                disabled={loading}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="auth-terms-scroll-body">
+              <div className="auth-terms-section">
+                <h4>1. Welcome to YunOh (Bayombong, Nueva Vizcaya)</h4>
+                <p>
+                  By creating a consumer account on YunOh, you agree to use our
+                  local dining discovery and digital promo platform responsibly
+                  and in good faith.
+                </p>
+              </div>
+
+              <div className="auth-terms-section">
+                <h4>2. Community Reviews & Dish Ratings</h4>
+                <p>
+                  You agree to submit honest, respectful, and authentic reviews
+                  and star ratings based on real dining experiences. Spam,
+                  defamatory language, or fraudulent ratings may be removed by
+                  administrators.
+                </p>
+              </div>
+
+              <div className="auth-terms-section">
+                <h4>3. Digital Vouchers & Storefront Promos</h4>
+                <p>
+                  Digital vouchers claimed on YunOh are limited to one voucher
+                  per user per establishment and are subject to each local
+                  merchant's operating hours and verification upon redemption.
+                </p>
+              </div>
+
+              <div className="auth-terms-section">
+                <h4>4. Location & Distance Services</h4>
+                <p>
+                  With your permission, YunOh uses device GPS coordinates solely
+                  to calculate real-time distance to dining establishments in
+                  Bayombong, Nueva Vizcaya.
+                </p>
+              </div>
+
+              <div className="auth-terms-section">
+                <h4>5. Data Privacy Compliance (RA 10173)</h4>
+                <p>
+                  In accordance with the Philippine Data Privacy Act of 2012,
+                  your account details (username and email) are securely
+                  encrypted and never shared with unauthorized third parties.
+                </p>
+              </div>
+            </div>
+
+            <label className="auth-terms-checkbox-row">
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+              />
+              <span>
+                I have read and agree to the YunOh Terms & Conditions and Data
+                Privacy Policy.
+              </span>
+            </label>
+
+            <div className="auth-terms-actions">
+              <button
+                type="button"
+                className="auth-terms-decline-btn"
+                onClick={() => setShowTermsModal(false)}
+                disabled={loading}
+              >
+                Decline
+              </button>
+              <button
+                type="button"
+                className="auth-terms-accept-btn"
+                onClick={handleConfirmTermsAndRegister}
+                disabled={!agreedToTerms || loading}
+              >
+                {loading ? "Creating Account..." : "Accept & Register"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

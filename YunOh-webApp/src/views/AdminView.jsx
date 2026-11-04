@@ -22,20 +22,20 @@ import { supabase } from "../supabaseClient";
 import "./AdminView.css";
 
 export default function AdminView({ onSignOut }) {
-  // Sliding Navigation Tabs ('pending' | 'verified' | 'users')
   const [activeTab, setActiveTab] = useState("pending");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Live Supabase Data States
   const [businesses, setBusinesses] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [totalReviewsCount, setTotalReviewsCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Expanded Credential Drawer & Lightbox States
   const [openCredBizId, setOpenCredBizId] = useState(null);
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  // Inline Delete Confirmation State (Replaces blocked window.confirm)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   useEffect(() => {
     fetchAdminDashboardData();
@@ -44,7 +44,6 @@ export default function AdminView({ onSignOut }) {
   const fetchAdminDashboardData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch all businesses ordered by newest first
       const { data: bizData } = await supabase
         .from("businesses")
         .select("*")
@@ -52,7 +51,6 @@ export default function AdminView({ onSignOut }) {
 
       setBusinesses(bizData || []);
 
-      // 2. Fetch all user profiles
       const { data: profData } = await supabase
         .from("profiles")
         .select("id, username, email, role, created_at")
@@ -60,7 +58,6 @@ export default function AdminView({ onSignOut }) {
 
       setUsersList(profData || []);
 
-      // 3. Fetch total reviews count
       const { count: revCount } = await supabase
         .from("reviews")
         .select("id", { count: "exact", head: true });
@@ -81,9 +78,7 @@ export default function AdminView({ onSignOut }) {
 
     setActionLoadingId(null);
 
-    if (error) {
-      alert(`Error updating verification: ${error.message}`);
-    } else {
+    if (!error) {
       setBusinesses((prev) =>
         prev.map((item) =>
           item.id === biz.id ? { ...item, is_verified: targetStatus } : item,
@@ -92,29 +87,22 @@ export default function AdminView({ onSignOut }) {
     }
   };
 
-  // Reject / Permanently Delete a Business Registration
-  const handleDeleteBusiness = async (biz) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to permanently remove "${biz.name}" from YunOh?`,
-    );
-    if (!confirmed) return;
-
-    setActionLoadingId(biz.id);
+  // Permanently Delete a Business Registration (No window.confirm block)
+  const handleConfirmDeleteBusiness = async (bizId) => {
+    setActionLoadingId(bizId);
     const { error } = await supabase
       .from("businesses")
       .delete()
-      .eq("id", biz.id);
+      .eq("id", bizId);
 
     setActionLoadingId(null);
+    setConfirmDeleteId(null);
 
-    if (error) {
-      alert(`Error deleting business: ${error.message}`);
-    } else {
-      setBusinesses((prev) => prev.filter((item) => item.id !== biz.id));
+    if (!error) {
+      setBusinesses((prev) => prev.filter((item) => item.id !== bizId));
     }
   };
 
-  // Helper: Format Structured Address
   const getFormattedAddress = (biz) => {
     const parts = [
       biz.street,
@@ -128,7 +116,6 @@ export default function AdminView({ onSignOut }) {
       : biz.address || "Bayombong, Nueva Vizcaya";
   };
 
-  // Helper: Lookup Owner Username / Email from usersList
   const getOwnerLabel = (ownerId) => {
     const owner = usersList.find((u) => u.id === ownerId);
     if (!owner) return "Registered Owner";
@@ -193,7 +180,7 @@ export default function AdminView({ onSignOut }) {
         </div>
       </div>
 
-      {/* 2. Responsive 4-Card Summary Grid (2x2 on Mobile, 4-col on Desktop) */}
+      {/* 2. Responsive 4-Card Summary Grid */}
       <div className="admin-stats-grid">
         <div className="admin-stat-card">
           <div className="admin-stat-top">
@@ -277,7 +264,6 @@ export default function AdminView({ onSignOut }) {
       {loading ? (
         <div className="admin-empty-box">Syncing records from Supabase...</div>
       ) : activeTab === "users" ? (
-        /* --- TAB 3: REGISTERED USERS DIRECTORY --- */
         <div className="admin-cards-grid">
           {filteredUsers.length === 0 ? (
             <div className="admin-empty-box">No matching user accounts.</div>
@@ -300,7 +286,6 @@ export default function AdminView({ onSignOut }) {
           )}
         </div>
       ) : (
-        /* --- TAB 1 & TAB 2: PENDING / VERIFIED BUSINESSES --- */
         <div className="admin-cards-grid">
           {filteredBusinesses.length === 0 ? (
             <div className="admin-empty-box">
@@ -315,6 +300,7 @@ export default function AdminView({ onSignOut }) {
                 : [];
               const isCredOpen = openCredBizId === biz.id;
               const avatarUrl = biz.business_profile_image || biz.logo_url;
+              const isConfirmingDelete = confirmDeleteId === biz.id;
 
               return (
                 <div key={biz.id} className="admin-biz-card">
@@ -348,7 +334,10 @@ export default function AdminView({ onSignOut }) {
                   <div className="admin-biz-meta-list">
                     <div className="admin-biz-meta-row">
                       <MapPin size={13} color="var(--accent-color)" />
-                      <span>{getFormattedAddress(biz)}</span>
+                      <span>
+                        {getFormattedAddress(biz)} ({biz.latitude},{" "}
+                        {biz.longitude})
+                      </span>
                     </div>
                     <div className="admin-biz-meta-row">
                       <Clock size={13} color="var(--accent-color)" />
@@ -365,7 +354,7 @@ export default function AdminView({ onSignOut }) {
                     )}
                   </div>
 
-                  {/* Collapsible Credentials Inspector (Mayor's Permit, DTI, BIR, etc.) */}
+                  {/* Collapsible Credentials Inspector */}
                   <button
                     type="button"
                     className="admin-cred-toggle-btn"
@@ -429,7 +418,7 @@ export default function AdminView({ onSignOut }) {
                     </div>
                   )}
 
-                  {/* Admin Moderation Actions */}
+                  {/* Admin Moderation Actions (Inline Confirm for Remove) */}
                   <div className="admin-card-actions">
                     {!biz.is_verified ? (
                       <button
@@ -457,15 +446,37 @@ export default function AdminView({ onSignOut }) {
                       </button>
                     )}
 
-                    <button
-                      type="button"
-                      className="admin-reject-btn"
-                      disabled={actionLoadingId === biz.id}
-                      onClick={() => handleDeleteBusiness(biz)}
-                      title="Delete business registration"
-                    >
-                      <Trash2 size={15} /> Remove
-                    </button>
+                    {!isConfirmingDelete ? (
+                      <button
+                        type="button"
+                        className="admin-reject-btn"
+                        disabled={actionLoadingId === biz.id}
+                        onClick={() => setConfirmDeleteId(biz.id)}
+                        title="Delete business registration"
+                      >
+                        <Trash2 size={15} /> Remove
+                      </button>
+                    ) : (
+                      <div className="admin-confirm-delete-row">
+                        <button
+                          type="button"
+                          className="admin-confirm-yes-btn"
+                          disabled={actionLoadingId === biz.id}
+                          onClick={() => handleConfirmDeleteBusiness(biz.id)}
+                        >
+                          {actionLoadingId === biz.id
+                            ? "Deleting..."
+                            : "Confirm Delete"}
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-confirm-no-btn"
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

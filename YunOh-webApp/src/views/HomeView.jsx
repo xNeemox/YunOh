@@ -39,10 +39,18 @@ export default function HomeView({
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserCoords({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
+          const detectedLat = pos.coords.latitude;
+          const detectedLng = pos.coords.longitude;
+          // Only use live GPS if user is within 25km of Bayombong; otherwise keep Bayombong Town Center
+          const distFromBayombong = calcHaversineKm(
+            BAYOMBONG_CENTER.lat,
+            BAYOMBONG_CENTER.lng,
+            detectedLat,
+            detectedLng,
+          );
+          if (distFromBayombong <= 25) {
+            setUserCoords({ lat: detectedLat, lng: detectedLng });
+          }
         },
         () => {},
         { enableHighAccuracy: true, timeout: 5000 },
@@ -173,31 +181,53 @@ export default function HomeView({
     return currentMins >= openMins && currentMins <= closeMins;
   };
 
-  const getDynamicDistance = (spot) => {
-    const lat = Number(spot.latitude);
-    const lng = Number(spot.longitude);
-
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-      return spot.distance || "1.5 km";
-    }
-
+  // Helper to calculate Haversine distance in km between two (lat, lng) pairs
+  const calcHaversineKm = (lat1, lng1, lat2, lng2) => {
     const toRad = (val) => (val * Math.PI) / 180;
     const R = 6371; // Earth radius in km
-    const dLat = toRad(lat - userCoords.lat);
-    const dLng = toRad(lng - userCoords.lng);
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
 
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(userCoords.lat)) *
-        Math.cos(toRad(lat)) *
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
         Math.sin(dLng / 2) *
         Math.sin(dLng / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distanceKm = R * c;
+    return R * c;
+  };
 
+  // --- HELPER 4: Dynamic Distance Calculation (Supports manual lat/lng & auto-swaps if reversed) ---
+  const getDynamicDistance = (spot) => {
+    let lat = parseFloat(spot.latitude);
+    let lng = parseFloat(spot.longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      return spot.distance || "1.5 km";
+    }
+
+    // Auto-correct if latitude and longitude were manually entered in reverse order
+    if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+      const temp = lat;
+      lat = lng;
+      lng = temp;
+    }
+
+    const distanceKm = calcHaversineKm(
+      userCoords.lat,
+      userCoords.lng,
+      lat,
+      lng,
+    );
+
+    if (distanceKm < 0.1) {
+      return "0.1 km";
+    }
     return `${distanceKm.toFixed(1)} km`;
   };
+
   const getDynamicRatingInfo = (spot) => {
     if (Array.isArray(spot.reviews)) {
       const count = spot.reviews.length;

@@ -545,3 +545,31 @@
   justify-content: center;
   cursor: pointer;
 }
+
+.admin-confirm-delete-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-confirm-yes-btn {
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: none;
+  background-color: #ef4444;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-confirm-no-btn {
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #d6d0c8);
+  background-color: var(--bg-primary, #faf6f0);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
