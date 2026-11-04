@@ -252,6 +252,7 @@
 
 /* --- Dynamic Barangay Filter Bar --- */
 .barangay-filter-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -268,20 +269,6 @@
   font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
-}
-
-.barangay-select {
-  flex: 1;
-  max-width: 210px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color, #ddd);
-  background-color: var(--card-bg, #ffffff);
-  color: var(--text-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
 }
 
 .barangay-select:focus {
@@ -380,7 +367,7 @@
 
 .barangay-select {
   flex: 1;
-  max-width: 195px;
+  max-width: 170px;
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border-color, #d6d0c8);

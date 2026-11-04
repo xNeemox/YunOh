@@ -81,7 +81,7 @@
 
 .discover-barangay-select {
   flex: 1;
-  max-width: 195px;
+  max-width: 170px;
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border-color, #d6d0c8);

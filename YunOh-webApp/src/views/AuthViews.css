@@ -150,3 +150,96 @@
   color: #10b981;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
+
+/* --- Password Strength Meter & Live Checklist --- */
+.pwd-strength-box {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e6d5c3);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.pwd-strength-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.pwd-strength-title {
+  color: var(--text-secondary);
+}
+
+.pwd-strength-badge {
+  font-weight: 800;
+}
+
+.pwd-strength-badge.weak {
+  color: #ef4444;
+}
+
+.pwd-strength-badge.fair {
+  color: #f59e0b;
+}
+
+.pwd-strength-badge.good {
+  color: #3b82f6;
+}
+
+.pwd-strength-badge.strong {
+  color: #10b981;
+}
+
+.pwd-bars-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.pwd-bar-segment {
+  height: 5px;
+  border-radius: 4px;
+  background-color: var(--border-color, #e5e0d8);
+  transition: background-color 0.25s ease;
+}
+
+.pwd-bar-segment.active.weak {
+  background-color: #ef4444;
+}
+
+.pwd-bar-segment.active.fair {
+  background-color: #f59e0b;
+}
+
+.pwd-bar-segment.active.good {
+  background-color: #3b82f6;
+}
+
+.pwd-bar-segment.active.strong {
+  background-color: #10b981;
+}
+
+.pwd-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px 8px;
+}
+
+.pwd-check-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.pwd-check-item.met {
+  color: #10b981;
+}
