@@ -235,9 +235,7 @@ export default function DiscoverView({
     <div className="discover-view">
       <div className="welcome-banner">
         <h3>Discover</h3>
-        <p className="discover-subtitle-muted">
-          Browsing live dining establishments stored in Supabase.
-        </p>
+        <p className="discover-subtitle-muted">Spot great place around you.</p>
 
         <div className="search-bar-container">
           <Search size={18} color="var(--text-secondary)" />
@@ -269,7 +267,7 @@ export default function DiscoverView({
       {/* Dynamic Town Barangay Filter */}
       <div className="discover-barangay-filter-row">
         <span className="discover-barangay-label">
-          <MapPin size={14} /> Filter by Barangay:
+          <MapPin size={14} /> Sort by Barangay:
         </span>
         <select
           className="discover-barangay-select"

@@ -288,8 +288,7 @@ export default function HomeView({
       <div className="welcome-banner">
         <h3>Discover Local Flavors 🍜</h3>
         <p className="home-subtitle-muted">
-          Find the best dining spots and digital promos around you in Bayombong,
-          Nueva Vizcaya.
+          Find the best dining spots in Bayombong, Nueva Vizcaya.
         </p>
 
         <div className="search-bar-container">
@@ -322,7 +321,7 @@ export default function HomeView({
       {/* Dynamic Town Barangay Filter */}
       <div className="barangay-filter-row">
         <span className="barangay-filter-label">
-          <MapPin size={14} /> Filter by Barangay:
+          <MapPin size={14} /> Sort by Barangay:
         </span>
         <select
           className="barangay-select"
