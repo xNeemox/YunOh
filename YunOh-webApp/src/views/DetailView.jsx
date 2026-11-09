@@ -15,6 +15,7 @@ import {
   Trash2,
   Utensils,
   X,
+  Navigation,
 } from "lucide-react";
 import { supabase } from "../supabaseClient";
 import "./DetailView.css";
@@ -60,6 +61,9 @@ export default function DetailView({
   // Check if this is a live UUID business from Supabase vs a numeric mock fallback card
   const isUuidBusiness =
     typeof restaurant.id === "string" && restaurant.id.length > 10;
+
+  // Option 2: Embedded Exact-Pin Map Preview Toggle State
+  const [showMapPreview, setShowMapPreview] = useState(false);
 
   // Primary Sliding Tab Navigation ('menu' | 'reviews' | 'promos')
   const [activeNavTab, setActiveNavTab] = useState("menu");
@@ -233,7 +237,6 @@ export default function DetailView({
 
     setRatingDishLoading(true);
 
-    // Demo fallback for non-UUID mock dishes
     if (!isUuidBusiness) {
       setDishRatingsMap((prev) => {
         const list = prev[dish.id] || [];
@@ -254,7 +257,6 @@ export default function DetailView({
 
     try {
       if (isUndoingSameStar) {
-        // User tapped the exact same star rating again -> Remove their rating!
         const { error } = await supabase
           .from("menu_item_ratings")
           .delete()
@@ -270,7 +272,6 @@ export default function DetailView({
           }));
         }
       } else {
-        // User tapped a new star rating (1-5) -> Upsert 1 rating per user per item
         const { data, error } = await supabase
           .from("menu_item_ratings")
           .upsert(
@@ -406,14 +407,45 @@ export default function DetailView({
     return restaurant.address || "Centro, Bayombong, Nueva Vizcaya";
   };
 
+  // --- HELPER: Resolve Exact Valid Coordinates (With Auto-Swap Safeguard) ---
+  const getExactCoordinates = () => {
+    let lat = parseFloat(restaurant.latitude);
+    let lng = parseFloat(restaurant.longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      return {
+        lat: BAYOMBONG_CENTER.lat,
+        lng: BAYOMBONG_CENTER.lng,
+        hasExactCoords: false,
+      };
+    }
+
+    // Auto-swap if longitude was accidentally typed into latitude
+    if (Math.abs(lat) > 90 && Math.abs(lng) <= 90) {
+      const temp = lat;
+      lat = lng;
+      lng = temp;
+    }
+
+    return {
+      lat: Number(lat.toFixed(6)),
+      lng: Number(lng.toFixed(6)),
+      hasExactCoords: true,
+    };
+  };
+
+  const exactCoords = getExactCoordinates();
+
+  // Google Maps Embed URL (Street-level zoom z=18 locked onto exact red pin)
+  const mapEmbedUrl = `https://maps.google.com/maps?q=${exactCoords.lat},${exactCoords.lng}&z=18&output=embed`;
+
+  // Exact External Google Maps Pin & Directions URL
+  const mapDirectUrl = `https://www.google.com/maps/search/?api=1&query=${exactCoords.lat},${exactCoords.lng}`;
+
   // --- HELPER: Dynamic Distance Calculation (Haversine formula in km) ---
   const getDynamicDistance = () => {
-    const lat = Number(restaurant.latitude);
-    const lng = Number(restaurant.longitude);
-
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-      return restaurant.distance || "1.5 km";
-    }
+    const lat = exactCoords.lat;
+    const lng = exactCoords.lng;
 
     const toRad = (val) => (val * Math.PI) / 180;
     const R = 6371;
@@ -490,10 +522,6 @@ export default function DetailView({
     restaurant.open_time,
     restaurant.close_time,
   );
-
-  const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${restaurant.name} ${formattedAddress}`,
-  )}`;
 
   // Handle Follow / Unfollow Toggle
   const handleToggleFollow = async () => {
@@ -829,15 +857,14 @@ export default function DetailView({
                 </span>
               </div>
 
-              <a
-                href={mapSearchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 className="compact-map-btn"
-                title="Open in Google Maps"
+                onClick={() => setShowMapPreview((prev) => !prev)}
+                title="See exact location on map"
               >
-                <Send size={12} /> See on map
-              </a>
+                <Send size={12} /> {showMapPreview ? "Hide map" : "See on map"}
+              </button>
             </div>
 
             <div className="info-row">
@@ -849,6 +876,34 @@ export default function DetailView({
               </span>
             </div>
           </div>
+
+          {/* OPTION 2: Embedded Exact-Pin Street-Level Map Preview */}
+          {showMapPreview && (
+            <div className="detail-map-preview-card">
+              <div className="detail-map-iframe-wrap">
+                <iframe
+                  title={`${restaurant.name} Exact Map Location`}
+                  src={mapEmbedUrl}
+                  className="detail-map-iframe"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <span className="detail-map-coords-pill">
+                  {exactCoords.lat}, {exactCoords.lng}
+                </span>
+              </div>
+
+              <a
+                href={mapDirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="detail-open-gmaps-btn"
+              >
+                <Navigation size={15} />
+                <span>Open in Google Maps & Get Directions</span>
+              </a>
+            </div>
+          )}
 
           {/* ================= PRIMARY SLIDING UNDERLINE NAVIGATION ================= */}
           <div className="detail-sliding-tabs">
@@ -990,7 +1045,6 @@ export default function DetailView({
                         key={starValue}
                         type="button"
                         onClick={() =>
-                          // Tap same star value again to undo back to 0!
                           setUserRating((prev) =>
                             prev === starValue ? 0 : starValue,
                           )
@@ -1128,6 +1182,7 @@ export default function DetailView({
                   </div>
                 ) : (
                   <button
+                    type="button"
                     className="claim-voucher-btn"
                     onClick={handleClaimVoucher}
                     disabled={claiming}
@@ -1141,7 +1196,7 @@ export default function DetailView({
         </div>
       </div>
 
-      {/* ================= MENU ITEM POP-OUT MODAL (1 Rating Per Consumer, Tap to Undo) ================= */}
+      {/* ================= MENU ITEM POP-OUT MODAL ================= */}
       {selectedDishModal && (
         <div
           className="dish-modal-overlay"
@@ -1183,7 +1238,7 @@ export default function DetailView({
               </div>
 
               {(() => {
-                const modalStats = getDishRatingStats(selectedDishModal.id);
+                const stats = getDishRatingStats(selectedDishModal.id);
                 return (
                   <>
                     <div className="dish-modal-meta-row">
@@ -1193,10 +1248,10 @@ export default function DetailView({
                         color="var(--accent-color)"
                       />
                       <span>
-                        {modalStats.avgText}{" "}
-                        {modalStats.count > 0
-                          ? `(${modalStats.count} rating${
-                              modalStats.count > 1 ? "s" : ""
+                        {stats.avgText}{" "}
+                        {stats.count > 0
+                          ? `(${stats.count} rating${
+                              stats.count > 1 ? "s" : ""
                             })`
                           : "(No ratings yet)"}
                       </span>
@@ -1209,8 +1264,8 @@ export default function DetailView({
 
                     <div className="dish-modal-rating-box">
                       <span className="dish-modal-rating-title">
-                        {modalStats.myRating > 0
-                          ? `You rated this dish ${modalStats.myRating} ★`
+                        {stats.myRating > 0
+                          ? `You rated this dish ${stats.myRating} ★`
                           : "Rate this Menu Item"}
                       </span>
 
@@ -1229,12 +1284,12 @@ export default function DetailView({
                             <Star
                               size={24}
                               fill={
-                                starVal <= modalStats.myRating
+                                starVal <= stats.myRating
                                   ? "var(--accent-color)"
                                   : "none"
                               }
                               color={
-                                starVal <= modalStats.myRating
+                                starVal <= stats.myRating
                                   ? "var(--accent-color)"
                                   : "var(--text-secondary)"
                               }
@@ -1244,8 +1299,8 @@ export default function DetailView({
                       </div>
 
                       <span className="dish-modal-rating-hint">
-                        {modalStats.myRating > 0
-                          ? `Tap ${modalStats.myRating}★ again to undo and remove your rating`
+                        {stats.myRating > 0
+                          ? `Tap ${stats.myRating}★ again to undo and remove your rating`
                           : "Tap a star to rate (1 rating per consumer)"}
                       </span>
                     </div>

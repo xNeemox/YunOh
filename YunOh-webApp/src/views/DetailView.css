@@ -909,3 +909,67 @@
   font-size: 0.72rem;
   color: var(--text-secondary);
 }
+
+/* --- Option 2: Compact "See on Map" & Embedded Exact-Pin Preview --- */
+.detail-map-preview-card {
+  margin-top: 10px;
+  background-color: var(--bg-primary, #fff9f3);
+  border: 1px solid var(--border-color, #e6d5c3);
+  border-radius: 14px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-map-iframe-wrap {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #e6d5c3);
+  background-color: #e5e0d8;
+}
+
+.detail-map-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.detail-map-coords-pill {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background-color: rgba(255, 255, 255, 0.92);
+  color: #2d2422;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.detail-open-gmaps-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background-color: var(--accent-color, #d97706);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  transition: opacity 0.2s ease;
+}
+
+.detail-open-gmaps-btn:hover {
+  opacity: 0.92;
+}
