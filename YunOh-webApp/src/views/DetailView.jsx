@@ -579,6 +579,7 @@ export default function DetailView({
     const randomCode = `YUNOH-${restaurant.name
       .slice(0, 3)
       .toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
     const promoText = restaurant.promo || "10% discount on total order";
 
     if (!isUuidBusiness) {
