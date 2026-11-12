@@ -56,7 +56,7 @@ export default function RegisterView({ switchToLogin }) {
 
   const strengthMeta = getStrengthMeta();
 
-  // Step 1: Validate inputs & username uniqueness, then open Terms & Conditions Modal
+  // Step 1: Validate inputs, username uniqueness & email uniqueness, then open Terms Modal
   const handleInitiateRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -64,7 +64,7 @@ export default function RegisterView({ switchToLogin }) {
     setSuccessMessage("");
 
     const cleanUsername = username.trim();
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanUsername) {
       setErrorMessage("Please enter a valid username.");
@@ -86,17 +86,32 @@ export default function RegisterView({ switchToLogin }) {
       return;
     }
 
-    // Pre-check if username is already taken in public.profiles before showing Terms Modal
+    // 1. Pre-check if username is already taken in public.profiles
     const { data: existingUser } = await supabase
       .from("profiles")
       .select("id")
       .ilike("username", cleanUsername)
       .maybeSingle();
 
-    setLoading(false);
-
     if (existingUser) {
       setErrorMessage("That username is already taken. Please choose another.");
+      setLoading(false);
+      return;
+    }
+
+    // 2. Pre-check if email address is already registered in public.profiles
+    const { data: existingEmail } = await supabase
+      .from("profiles")
+      .select("id")
+      .ilike("email", cleanEmail)
+      .maybeSingle();
+
+    setLoading(false);
+
+    if (existingEmail) {
+      setErrorMessage(
+        "That email address is already registered. Please sign in or use a different email.",
+      );
       return;
     }
 
@@ -113,7 +128,7 @@ export default function RegisterView({ switchToLogin }) {
     setErrorMessage("");
 
     const cleanUsername = username.trim();
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     // Sign up user in Supabase Auth and pass metadata for the DB trigger
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -131,6 +146,20 @@ export default function RegisterView({ switchToLogin }) {
     if (authError) {
       setShowTermsModal(false);
       setErrorMessage(authError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Catch Supabase Auth's obfuscated duplicate email response (empty identities array)
+    if (
+      authData?.user &&
+      Array.isArray(authData.user.identities) &&
+      authData.user.identities.length === 0
+    ) {
+      setShowTermsModal(false);
+      setErrorMessage(
+        "This email address is already in use by another account. Please sign in instead.",
+      );
       setLoading(false);
       return;
     }
@@ -154,7 +183,13 @@ export default function RegisterView({ switchToLogin }) {
 
       if (profileError) {
         setShowTermsModal(false);
-        setErrorMessage(profileError.message);
+        if (profileError.code === "23505") {
+          setErrorMessage(
+            "That username or email address is already registered.",
+          );
+        } else {
+          setErrorMessage(profileError.message);
+        }
         setLoading(false);
         return;
       }
@@ -175,7 +210,7 @@ export default function RegisterView({ switchToLogin }) {
     <div className="auth-penpot-container">
       {/* Brand Logo Badge */}
       <div className="auth-brand-badge">
-        <span>YunOh</span>
+        <span>YanOh</span>
       </div>
 
       <div className="auth-text-header">
@@ -342,9 +377,9 @@ export default function RegisterView({ switchToLogin }) {
 
             <div className="auth-terms-scroll-body">
               <div className="auth-terms-section">
-                <h4>1. Welcome to YunOh (Bayombong, Nueva Vizcaya)</h4>
+                <h4>1. Welcome to YanOh (Bayombong, Nueva Vizcaya)</h4>
                 <p>
-                  By creating a consumer account on YunOh, you agree to use our
+                  By creating a consumer account on YanOh, you agree to use our
                   local dining discovery and digital promo platform responsibly
                   and in good faith.
                 </p>
@@ -363,7 +398,7 @@ export default function RegisterView({ switchToLogin }) {
               <div className="auth-terms-section">
                 <h4>3. Digital Vouchers & Storefront Promos</h4>
                 <p>
-                  Digital vouchers claimed on YunOh are limited to one voucher
+                  Digital vouchers claimed on YanOh are limited to one voucher
                   per user per establishment and are subject to each local
                   merchant's operating hours and verification upon redemption.
                 </p>
@@ -372,7 +407,7 @@ export default function RegisterView({ switchToLogin }) {
               <div className="auth-terms-section">
                 <h4>4. Location & Distance Services</h4>
                 <p>
-                  With your permission, YunOh uses device GPS coordinates solely
+                  With your permission, YanOh uses device GPS coordinates solely
                   to calculate real-time distance to dining establishments in
                   Bayombong, Nueva Vizcaya.
                 </p>
@@ -395,7 +430,7 @@ export default function RegisterView({ switchToLogin }) {
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
               />
               <span>
-                I have read and agree to the YunOh Terms & Conditions and Data
+                I have read and agree to the YanOh Terms & Conditions and Data
                 Privacy Policy.
               </span>
             </label>

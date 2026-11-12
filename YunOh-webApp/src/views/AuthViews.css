@@ -384,3 +384,51 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* --- Login Header & Forgot Password Styles --- */
+.auth-text-header.login-spacing {
+  margin-bottom: 24px;
+}
+
+.penpot-forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: -6px;
+  margin-bottom: 4px;
+}
+
+.penpot-forgot-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-color, #d97706);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.penpot-forgot-link:hover {
+  opacity: 0.85;
+  text-decoration: underline;
+}
+
+.penpot-back-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.penpot-back-login-btn:hover {
+  color: var(--text-primary);
+}
